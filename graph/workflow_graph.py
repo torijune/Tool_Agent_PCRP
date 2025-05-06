@@ -5,12 +5,14 @@ from langchain_core.runnables import Runnable
 from agents.planner_agent import planner_node
 from agents.tools import tool_caller_node
 from agents.critic_agent import critic_node
+from agents.responder_agent import responder_node
 
 class AgentState(TypedDict):
     query: Annotated[str, "query"]
     plan: Annotated[str, "plan"]
     tool_result: Annotated[str, "tool"]
     decision: Annotated[str, "decision"]
+    final_answer: Annotated[str, "final_answer"]
 
 def build_workflow_graph() -> Runnable:
     builder = StateGraph(state_schema=AgentState)
@@ -19,6 +21,8 @@ def build_workflow_graph() -> Runnable:
     builder.add_node("planner", planner_node)
     builder.add_node("tool_caller", tool_caller_node)
     builder.add_node("critic", critic_node)
+    builder.add_node("responder", responder_node)
+    builder.add_edge("responder", END) 
 
     # ▶️ Entry Point
     builder.set_entry_point("planner")
@@ -31,14 +35,14 @@ def build_workflow_graph() -> Runnable:
     def route_critic(state: dict) -> str:
         decision = state.get("decision", "")
         if decision == "accept":
-            return END
+            return "responder"
         elif decision == "reject":
             return "planner"
         else:
             raise ValueError(f"Unexpected decision: {decision}")
 
     # 📍 조건부 분기 등록 (END 포함)
-    builder.add_conditional_edges("critic", route_critic, [END, "planner"])
+    builder.add_conditional_edges("critic", route_critic, ["responder", "planner"])
 
     # Remove this line that causes the error
     # builder.set_finish_point(END)

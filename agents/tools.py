@@ -8,11 +8,9 @@ def calculate_compound_interest(principal: float, rate: float, years: int) -> st
     final_amount = principal * ((1 + rate) ** years)
     return f"복리 계산 결과는 약 {round(final_amount):,}원입니다."
 
-from duckduckgo_search import DDGS
-
 def search_web(query: str) -> str:
     with DDGS() as ddgs:
-        results = list(ddgs.text(query, max_results=1))
+        results = list(ddgs.text(query, max_results=3))
         if results:
             title = results[0].get('title')
             url = results[0].get('href')

@@ -9,7 +9,7 @@ load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # ✅ Critic LLM 설정: 적당한 다양성과 판단 허용을 위해 temperature = 0.5
-llm = ChatOpenAI(temperature=0.5)
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.5)
 
 # ✅ 판단 기준을 강화한 Critic Prompt
 CRITIC_PROMPT = """

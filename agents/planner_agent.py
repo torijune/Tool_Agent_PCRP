@@ -9,7 +9,7 @@ from langchain_core.runnables import RunnableLambda
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-llm = ChatOpenAI(temperature=0.3)
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.3)
 
 PLANNER_PROMPT = """
 You are a planning assistant. Based on the user query below, decide the most appropriate tool to use (calculator, python, search, etc.)
