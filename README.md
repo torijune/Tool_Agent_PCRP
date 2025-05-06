@@ -6,7 +6,7 @@ LangGraph 기반의 Tool-Using Agent 프로젝트입니다.
 > **P**lanning → **Tool Execution** → **Critic Evaluation** → (Re-)**Planning**
 ## 🔧 Workflow Graph
 
-![Workflow Graph](images/workflow.png)
+![Workflow Graph](workflow_graph.png)
 ---
 
 ## 🧠 구성 개요
