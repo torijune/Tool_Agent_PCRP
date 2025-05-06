@@ -4,12 +4,12 @@ LangGraph 기반의 Tool-Using Agent 프로젝트입니다.
 이 에이전트는 다음과 같은 구조를 따릅니다:
 
 > **P**lanning → **Tool Execution** → **Critic Evaluation** → (Re-)**Planning**
-## 🔧 Workflow Graph
+## Workflow Graph
 
 ![Workflow Graph](workflow_graph.png)
 ---
 
-## 🧠 구성 개요
+## 구성 개요
 
 - **LangGraph**를 활용한 DAG 기반 에이전트 흐름
 - **Planner**: LLM이 입력 질의에 대한 계획 수립
@@ -19,7 +19,18 @@ LangGraph 기반의 Tool-Using Agent 프로젝트입니다.
 
 ---
 
-## 📁 디렉토리 구조
+## Tool List
+
+- Web Search Tool:
+    - Using duckduckgo_search API for web searching
+- Top-Tier Conference Abstract Analysis AI
+    - LangGraph Multi-Agent
+        - Start → User Inpur Query → Abstracts Retrieval → Retrieved Documents Relevance Check → LLM Answer Generation → Generated Answer Hallucination Check → End
+
+
+---
+
+## 디렉토리 구조
 Tool_Agent_PCRP/  
 ├── main.py  
 ├── graph/  
@@ -29,7 +40,7 @@ Tool_Agent_PCRP/
 
 ---
 
-## 🚧 향후 추가 예정
+## 향후 추가 예정
 
 - [ ] 각 도구 설명 및 schema 문서화
 - [ ] Web UI 연동 (Streamlit/Gradio 등)
