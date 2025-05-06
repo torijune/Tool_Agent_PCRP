@@ -4,7 +4,9 @@ LangGraph 기반의 Tool-Using Agent 프로젝트입니다.
 이 에이전트는 다음과 같은 구조를 따릅니다:
 
 > **P**lanning → **Tool Execution** → **Critic Evaluation** → (Re-)**Planning**
+## 🔧 Workflow Graph
 
+![Workflow Graph](images/workflow.png)
 ---
 
 ## 🧠 구성 개요
