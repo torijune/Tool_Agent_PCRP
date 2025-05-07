@@ -27,7 +27,7 @@ def paper_abstract(query: str):
     abstract_graph = build_abstract_graph()
     input_state = {"query": query}
     result = abstract_graph.invoke(input_state)
-    return result.get("generated_answer", "분석 결과를 생성하지 못했습니다.")
+    return result.get("retrieved_doc", "분석 결과를 생성하지 못했습니다.")
 
 # 🧠 Tool 선택기 (Function Calling 기반)
 def tool_executor(tool_name: str, query: str):
