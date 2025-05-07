@@ -29,17 +29,17 @@ def hallucination_check_node(state: dict) -> dict:
     retrieved_doc = state["retrieved_doc"]
     answer = state["generated_answer"]
 
-    print("🧠 Hallucination Check 시작")
-    print(f"❓ 사용자 질문:\n{query}")
-    print(f"📄 검색된 논문 요약 (미리보기):\n{retrieved_doc[:300]}...")
-    print(f"💬 AI 응답:\n{answer}")
+    # print("🧠 Hallucination Check 시작")
+    # print(f"❓ 사용자 질문:\n{query}")
+    # print(f"📄 검색된 논문 요약 (미리보기):\n{retrieved_doc[:300]}...")
+    # print(f"💬 AI 응답:\n{answer}")
 
     decision = llm.invoke(
         HALLUCINATION_PROMPT.format(query=query, retrieved_doc=retrieved_doc, answer=answer)
     ).content.strip().lower()
 
-    print(f"✅ 판단 결과: {decision}")
-    print("-" * 60)
+    # print(f"✅ 판단 결과: {decision}")
+    # print("-" * 60)
 
     return {**state, "hallucination_decision": decision}
 

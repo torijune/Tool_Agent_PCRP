@@ -2,10 +2,10 @@ from langgraph.graph import StateGraph, END
 from typing import Annotated, TypedDict
 from langchain_core.runnables import Runnable
 
-from agents_B.retriever_agent import retriever_node
-from agents_B.relevance_checker_agent import relevance_check_node
-from agents_B.answer_generator_agent import answer_gen_node
-from agents_B.hallucination_checker_agent import hallucination_check_node
+from agents.abstract_agents.agents_B.retriever_agent import retriever_node
+from agents.abstract_agents.agents_B.relevance_checker_agent import relevance_check_node
+from agents.abstract_agents.agents_B.answer_generator_agent import answer_gen_node
+from agents.abstract_agents.agents_B.hallucination_checker_agent import hallucination_check_node
 
 
 # 각 noded의 출력을 State라고 정의하여 각 Type을 미리 정해두는 것

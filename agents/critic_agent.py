@@ -41,7 +41,7 @@ def critic_fn(state: dict) -> dict:
     response = llm.invoke(CRITIC_PROMPT.format(query=query, plan=plan, tool_result=result))
     decision = response.content.strip().lower()
 
-    # print("🔍 Critic Decision:", decision)
+    print("🔍 Critic Decision:", decision)
 
     # ✅ fail-safe: 허용된 값 외의 출력은 강제 reject
     if decision not in ["accept", "reject"]:

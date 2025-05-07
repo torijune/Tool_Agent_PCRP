@@ -21,21 +21,22 @@ ANSWER_PROMPT = """
 {retrieved_doc}
 
 위 논문 정보를 참고하여 사용자 질문에 대해 정확하고 간결한 답변을 생성해주세요.
+반드시 한국어로 답변해주세요.
 """
 
 def answer_gen_node(state: dict) -> dict:
     query = state["query"]
     retrieved_doc = state.get("retrieved_doc", "")
 
-    print("💬 Answer Generation 시작")
-    print(f"📝 사용자 질문:\n{query}")
-    print(f"📄 검색된 논문 요약 (미리보기):\n{retrieved_doc[:300]}...")
+    # print("💬 Answer Generation 시작")
+    # print(f"📝 사용자 질문:\n{query}")
+    # print(f"📄 검색된 논문 요약 (미리보기):\n{retrieved_doc[:300]}...")
 
     response = llm.invoke(ANSWER_PROMPT.format(query=query, retrieved_doc=retrieved_doc))
     generated_answer = response.content.strip()
 
-    print(f"✅ 생성된 답변:\n{generated_answer}")
-    print("-" * 60)
+    # print(f"✅ 생성된 답변:\n{generated_answer}")
+    # print("-" * 60)
 
     return {**state, "generated_answer": generated_answer}
 

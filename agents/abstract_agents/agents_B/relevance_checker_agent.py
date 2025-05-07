@@ -24,16 +24,16 @@ def relevance_check_node(state: dict) -> dict:
     query = state["query"]
     retrieved_doc = state.get("retrieved_doc", "")
 
-    print("🧠 Relevance Check 시작")
-    print(f"📝 사용자 질문:\n{query}")
-    print(f"📄 검색된 논문 요약 (미리보기):\n{retrieved_doc[:300]}...")
+    # print("🧠 Relevance Check 시작")
+    # print(f"📝 사용자 질문:\n{query}")
+    # print(f"📄 검색된 논문 요약 (미리보기):\n{retrieved_doc[:300]}...")
     
     # LLM에게 판단 요청
     response = llm.invoke(RELEVANCE_PROMPT.format(query=query, retrieved_doc=retrieved_doc))
     decision = response.content.strip().lower()
 
-    print(f"✅ 판단 결과: {decision}")
-    print("-" * 60)
+    # print(f"✅ 판단 결과: {decision}")
+    # print("-" * 60)
 
     # 결과 반환
     return {**state, "relevance_decision": decision}
