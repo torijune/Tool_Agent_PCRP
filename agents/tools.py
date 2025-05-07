@@ -23,23 +23,29 @@ def search_web(query):
 
 # 📄 논문 Abstract 분석기 (LangGraph 기반)
 def paper_abstract(query: str):
+    # 만들어둔 LangGraph 불러오기
     abstract_graph = build_workflow_graph()
     input_state = {"query": query}
     result = abstract_graph.invoke(input_state)
     return result.get("generated_answer", "분석 결과를 생성하지 못했습니다.")
 
-# 🧠 Tool 선택기
-def tool_executor(plan, query):
-    if "search" in plan.lower():
+# 🧠 Tool 선택기 (Function Calling 기반)
+def tool_executor(tool_name: str, query: str):
+    tool_name = tool_name.lower()
+
+    # web search 할 때
+    if tool_name == "search":
         return search_web(query)
-    elif "abstract" in plan.lower():
+    
+    # 논문 abstract 분석할 때
+    elif tool_name == "abstract analyzer":
         return paper_abstract(query)
     else:
         return "❌ 적절한 도구를 찾을 수 없습니다."
 
 # ✅ LangChain-compatible node
 def tool_caller_fn(state: dict) -> dict:
-    plan = state.get("plan", "")
+    plan = state.get("plan", "")  # ex: "abstract analyzer"
     query = state.get("query", "")
     tool_result = tool_executor(plan, query)
     return {**state, "tool_result": tool_result}

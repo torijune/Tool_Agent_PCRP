@@ -27,7 +27,7 @@ AI 응답:
 def hallucination_check_node(state: dict) -> dict:
     query = state["query"]
     retrieved_doc = state["retrieved_doc"]
-    answer = state["generated_answer"]
+    answer = state["generated_analysis"]
 
     # print("🧠 Hallucination Check 시작")
     # print(f"❓ 사용자 질문:\n{query}")

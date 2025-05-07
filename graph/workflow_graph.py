@@ -13,6 +13,7 @@ class AgentState(TypedDict):
     tool_result: Annotated[str, "tool"]
     decision: Annotated[str, "decision"]
     final_answer: Annotated[str, "final_answer"]
+    plan_desc: Annotated[str, "plan_desc"]
 
 def build_workflow_graph() -> Runnable:
     builder = StateGraph(state_schema=AgentState)

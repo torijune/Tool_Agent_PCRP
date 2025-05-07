@@ -4,7 +4,7 @@ from langchain_core.runnables import Runnable
 
 from agents.abstract_agents.agents_B.retriever_agent import retriever_node
 from agents.abstract_agents.agents_B.relevance_checker_agent import relevance_check_node
-from agents.abstract_agents.agents_B.answer_generator_agent import answer_gen_node
+from agents.abstract_agents.agents_B.abstract_analysis_agent import abstract_analysis_node
 from agents.abstract_agents.agents_B.hallucination_checker_agent import hallucination_check_node
 
 
@@ -23,14 +23,14 @@ def build_workflow_graph() -> Runnable:
     # 노드 정의
     builder.add_node("retriever", retriever_node)
     builder.add_node("relevance_checker", relevance_check_node)
-    builder.add_node("answer_generator", answer_gen_node)
+    builder.add_node("abstract_analyzer", abstract_analysis_node)
     builder.add_node("hallucination_checker", hallucination_check_node)
 
     # 엣지 정의
     builder.set_entry_point("retriever")
     builder.add_edge("retriever", "relevance_checker")
-    builder.add_edge("relevance_checker", "answer_generator")
-    builder.add_edge("answer_generator", "hallucination_checker")
+    builder.add_edge("relevance_checker", "abstract_analyzer")
+    builder.add_edge("abstract_analyzer", "hallucination_checker")
 
     # 검색 결과 평가
     def route_relevance(state: dict) -> str:
@@ -45,7 +45,7 @@ def build_workflow_graph() -> Runnable:
         "relevance_checker", 
         route_relevance, 
         {
-            "accept": "answer_generator",
+            "accept": "abstract_analyzer",
             "reject": "retriever"
         }
     )
@@ -64,7 +64,7 @@ def build_workflow_graph() -> Runnable:
         route_hallucination, 
         {
             "accept": END,
-            "reject": "answer_generator"
+            "reject": "abstract_analyzer"
         }
     )
 

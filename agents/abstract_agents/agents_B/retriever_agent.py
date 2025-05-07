@@ -1,10 +1,10 @@
 from langchain_core.runnables import RunnableLambda
 from langchain_community.vectorstores import FAISS
-from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 from langchain.schema.document import Document
 from typing import List
 from dotenv import load_dotenv
-from tqdm import tqdm
+import numpy as np
 import json, os
 
 load_dotenv()
@@ -13,53 +13,63 @@ embedding_model = OpenAIEmbeddings(model="text-embedding-3-small")
 DATA_PATH = "agents/abstract_agents/data/EMNLP_ACL_NAACL_Abstracts.json"
 FAISS_PATH = "agents/abstract_agents/data/faiss_index"
 
-# 🔹 문서 로딩 함수
 def load_documents(path: str) -> List[Document]:
-    # print(f"📄 문서 로딩 중: {path}")
     with open(path, 'r', encoding='utf-8') as f:
         data = json.load(f)
-    filtered = [
+    return [
         Document(
             page_content=item["abstract"],
             metadata={"title": item.get("title", ""), "url": item.get("url", "")}
         )
         for item in data if item.get("abstract") and item.get("title")
     ]
-    # print(f"✅ 총 유효 문서 수: {len(filtered)}")
-    return filtered
 
 if os.path.exists(FAISS_PATH):
-    # print("📁 기존 FAISS 인덱스를 로드합니다.")
-    vectorstore = FAISS.load_local(FAISS_PATH, 
-                                   embeddings=embedding_model, 
-                                   index_name="papers", 
+    vectorstore = FAISS.load_local(FAISS_PATH,
+                                   embeddings=embedding_model,
+                                   index_name="papers",
                                    allow_dangerous_deserialization=True)
 else:
-    # print("🆕 새로 임베딩하고 FAISS 인덱스를 생성합니다.")
     documents = load_documents(DATA_PATH)
-
-    class TrackedEmbedding(OpenAIEmbeddings):
-        def embed_documents(self, texts: List[str]) -> List[List[float]]:
-            # print(f"🔍 총 문서 수: {len(texts)} → 임베딩 시작")
-            for _ in tqdm(range(len(texts)), desc="📦 Embedding 진행 중", unit="docs"):
-                pass
-            return super().embed_documents(texts)
-
-    tracked_model = TrackedEmbedding(model="text-embedding-3-small")
-    vectorstore = FAISS.from_documents(documents, tracked_model)
+    vectorstore = FAISS.from_documents(documents, embedding_model)
     vectorstore.save_local(FAISS_PATH, index_name="papers")
-    # print("✅ FAISS 인덱스 저장 완료")
 
-# 🔹 Retriever 구성
-# print("🔗 Retriever 구성 완료")
-retriever = vectorstore.as_retriever(search_type="similarity", k=3)
+retriever = vectorstore.as_retriever(search_type="similarity", k=10)
 
-# 🔹 LangGraph용 node로 사용될 함수 정의
+# 🔹 수정된 retriever_node
 def retriever_node(state: dict) -> dict:
     query = state["query"]
-    # print(f"🔎 질의 처리 중: \"{query}\"")
-    docs = retriever.get_relevant_documents(query)
-    # print(f"📚 관련 문서 수: {len(docs)}")
+    plan_desc = state.get("plan_desc", "")
+
+    # 두 쿼리 임베딩
+    query_emb = embedding_model.embed_query(query)
+    plan_emb = embedding_model.embed_query(plan_desc)
+
+    # 전체 인덱스에서 벡터 추출
+    faiss_index = vectorstore.index
+    stored_vectors = faiss_index.reconstruct_n(0, faiss_index.ntotal)
+
+    # cosine similarity 계산
+    def cosine_sim(a, b):
+        return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b) + 1e-8)
+
+    query_scores = [cosine_sim(query_emb, v) for v in stored_vectors]
+    plan_scores = [cosine_sim(plan_emb, v) for v in stored_vectors]
+
+    combined_scores = [(i, (q + p) / 2) for i, (q, p) in enumerate(zip(query_scores, plan_scores))]
+
+    top_k = sorted(combined_scores, key=lambda x: x[1], reverse=True)[:5]
+
+    # Top 5 문서 로깅
+    print("\n Top 5 문서들과 Score 분석:")
+    for i, combined_score in top_k:
+        doc = vectorstore.docstore._dict[vectorstore.index_to_docstore_id[i]]
+        print(f"- 제목: {doc.metadata['title']}")
+        print(f"  ⤷ Query Score: {query_scores[i]:.4f}")
+        print(f"  ⤷ Plan Score : {plan_scores[i]:.4f}")
+        print(f"  ⤷ 평균 Score  : {combined_score:.4f}")
+
+    docs = [vectorstore.docstore._dict[vectorstore.index_to_docstore_id[i]] for i, _ in top_k]
 
     combined = "\n\n".join([
         f"제목: {doc.metadata['title']}\n요약: {doc.page_content}"

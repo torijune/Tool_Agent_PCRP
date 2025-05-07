@@ -33,11 +33,11 @@ def answer_gen_node(state: dict) -> dict:
     # print(f"📄 검색된 논문 요약 (미리보기):\n{retrieved_doc[:300]}...")
 
     response = llm.invoke(ANSWER_PROMPT.format(query=query, retrieved_doc=retrieved_doc))
-    generated_answer = response.content.strip()
+    generated_analysis = response.content.strip()
 
-    # print(f"✅ 생성된 답변:\n{generated_answer}")
+    # print(f"✅ 생성된 답변:\n{generated_analysis}")
     # print("-" * 60)
 
-    return {**state, "generated_answer": generated_answer}
+    return {**state, "generated_analysis": generated_analysis}
 
 answer_gen_node = RunnableLambda(answer_gen_node)
