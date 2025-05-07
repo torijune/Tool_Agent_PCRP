@@ -13,11 +13,11 @@ class AgentState(TypedDict):
     query: Annotated[str, "query"]
     retrieved_doc: Annotated[str, "retrieved_doc"]
     relevance_decision: Annotated[str, "relevance_decision"]
-    generated_answer: Annotated[str, "generated_answer"]
+    generated_analysis: Annotated[str, "generated_analysis"]
     hallucination_decision: Annotated[str, "hallucination_decision"]
 
 
-def build_workflow_graph() -> Runnable:
+def build_abstract_graph() -> Runnable:
     builder = StateGraph(state_schema=AgentState)
 
     # 노드 정의

@@ -1,5 +1,5 @@
 from langchain_core.runnables import RunnableLambda
-from agents.abstract_agents.abstract_graph.abstract_workflow_graph import build_workflow_graph
+from agents.abstract_agents.abstract_graph.abstract_workflow_graph import build_abstract_graph
 import math
 import re
 from duckduckgo_search import DDGS
@@ -24,7 +24,7 @@ def search_web(query):
 # 📄 논문 Abstract 분석기 (LangGraph 기반)
 def paper_abstract(query: str):
     # 만들어둔 LangGraph 불러오기
-    abstract_graph = build_workflow_graph()
+    abstract_graph = build_abstract_graph()
     input_state = {"query": query}
     result = abstract_graph.invoke(input_state)
     return result.get("generated_answer", "분석 결과를 생성하지 못했습니다.")

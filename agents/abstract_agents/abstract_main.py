@@ -1,6 +1,6 @@
-from abstract_graph.abstract_workflow_graph import build_workflow_graph
+from abstract_graph.abstract_workflow_graph import build_abstract_graph
 
-workflow = build_workflow_graph()
+workflow = build_abstract_graph()
 result = workflow.invoke({
     "query": "Structured data retrieval의 최신 논문들의 경향에 대해서 알려줘."
 })

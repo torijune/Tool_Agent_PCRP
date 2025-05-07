@@ -24,7 +24,7 @@ ANSWER_PROMPT = """
 반드시 한국어로 답변해주세요.
 """
 
-def answer_gen_node(state: dict) -> dict:
+def abstract_analysis_node(state: dict) -> dict:
     query = state["query"]
     retrieved_doc = state.get("retrieved_doc", "")
 
@@ -40,4 +40,4 @@ def answer_gen_node(state: dict) -> dict:
 
     return {**state, "generated_analysis": generated_analysis}
 
-answer_gen_node = RunnableLambda(answer_gen_node)
+abstract_analysis_node = RunnableLambda(abstract_analysis_node)

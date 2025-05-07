@@ -2,9 +2,9 @@ from graph.workflow_graph import build_workflow_graph
 
 workflow = build_workflow_graph()
 
-# # Mermaid 기반 그래프 시각화
-# with open("workflow_graph.png", "wb") as f:
-#     f.write(workflow.get_graph(xray=True).draw_mermaid_png())
+# Mermaid 기반 그래프 시각화
+with open("workflow_graph.png", "wb") as f:
+    f.write(workflow.get_graph(xray=True).draw_mermaid_png())
 
 
 def make_response(query):
