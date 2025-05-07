@@ -6,7 +6,7 @@ LangGraph 기반의 Tool-Using Agent 프로젝트입니다.
 > **P**lanning → **Tool Execution** → **Critic Evaluation** → (Re-)**Planning**
 ## System Overview
 
-![System Overview](SystemOverview.png)
+![System Overview](SystemOverview.png)
 
 ---
 
@@ -26,8 +26,7 @@ LangGraph 기반의 Tool-Using Agent 프로젝트입니다.
     - Using duckduckgo_search API for web searching
 - Top-Tier Conference Abstract Analysis AI
     - LangGraph Multi-Agent
-        - Start → User Inpur Query → Abstracts Retrieval → Retrieved Documents Relevance Check → LLM Answer Generation → Generated Answer Hallucination Check → End  
-![Abstract Analysis AI WorkFlow](abstract_agent_workflow.png)
+        - Start → User Inpur Query → Abstracts Retrieval → Retrieved Documents Relevance Check → LLM Answer Generation → Generated Answer Hallucination Check → End 
 
 
 ---
