@@ -10,6 +10,8 @@ from duckduckgo_search import DDGS
 - 논문 Abstract 분석기 (LangGraph로 구현되어 있음)
 '''
 
+############################################## Tool List ##############################################
+
 # 🌐 Web Search Tool
 def search_web(query):
     with DDGS() as ddgs:
@@ -29,6 +31,12 @@ def paper_abstract(query: str):
     result = abstract_graph.invoke(input_state)
     return result.get("retrieved_doc", "분석 결과를 생성하지 못했습니다.")
 
+def table_analysis(table):
+    
+    return 
+
+
+############################################## Tool Execution ##############################################
 # 🧠 Tool 선택기 (Function Calling 기반)
 def tool_executor(tool_name: str, query: str):
     tool_name = tool_name.lower()
@@ -43,6 +51,10 @@ def tool_executor(tool_name: str, query: str):
     else:
         return "❌ 적절한 도구를 찾을 수 없습니다."
 
+
+
+
+############################################## Tool Calling Node ##############################################
 # ✅ LangChain-compatible node
 def tool_caller_fn(state: dict) -> dict:
     plan = state.get("plan", "")  # ex: "abstract analyzer"

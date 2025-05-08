@@ -5,3 +5,5 @@ langchain_community
 langchain_openai
 bs4
 faiss-cpu
+pandas
+openpyxl
