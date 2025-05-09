@@ -12,7 +12,7 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # 🔧 최신 도구 설명이 포함된 function_call 기반 모델 생성
 llm = ChatOpenAI(
-    model="gpt-4o",  # function calling 지원 모델
+    model="gpt-4o-mini",  # function calling 지원 모델
     temperature=0.2,
     model_kwargs={"functions": tools_schema}
 )
