@@ -39,11 +39,44 @@ LangGraph 기반의 Tool-Using Agent 프로젝트입니다.
 ![Social Survey Analysis Tool Overview](TableFlow.png)
 ---
 
-## 디렉토리 구조
 Tool_Agent_PCRP/  
 ├── main.py  
 ├── graph/  
+│   ├── workflow_graph.py  
+│   └── table_workflow_graph.py  
+│
 ├── agents/  
+│   ├── tools.py  
+│   ├── tools_schema.py  
+│   ├── planner_agent.py  
+│   ├── critic_agent.py  
+│   ├── responder_agent.py  
+│   ├── abstract_agents/  
+│   │   ├── abstract_main.py  
+│   │   ├── agents_B/  
+│   │   │   ├── retriever_agent.py  
+│   │   │   ├── relevance_checker_agent.py  
+│   │   │   ├── answer_generator_agent.py  
+│   │   │   └── hallucination_checker_agent.py  
+│   │   └── abstract_graph/  
+│   │       └── abstract_workflow_graph.py  
+│   │
+│   └── table_agents/  
+│       ├── table_main.py  
+│       ├── table_list/  
+│       │   ├── 서울시_환경조사_2023.csv  
+│       │   └── ...  
+│       ├── agent_C/  
+│       │   ├── retrieval_file_agent.py  
+│       │   ├── table_parser.py  
+│       │   ├── table_numeric_analyzer.py  
+│       │   ├── table_analyzer.py  
+│       │   ├── hallucination_checker.py  
+│       │   └── revision_agent.py  
+│       └── table_graph/  
+│           └── table_workflow_graph.py  
+│
 ├── tools/  
+│   └── duckduckgo_search.py  
+│
 └── README.md  
-
