@@ -42,39 +42,44 @@ LangGraph 기반의 Tool-Using Agent 프로젝트입니다.
 
 # 디렉토리 구조
 ```plaintext
-Tool_Agent_PCRP/  
+Tool_Agent_PCRP/   
 ├── main.py  
+├── .gitignore  
+├── Readme.md  
+├── requirements.txt  
+├── AbstractFlow.png  
+├── SysyemOverview.png  
+├── TableFlow.png  
 ├── graph/  
-│   ├── workflow_graph.py  
-│   └── table_workflow_graph.py  
+│   └── workflow_graph.py  
 ├── agents/  
+│   ├── critic_agent.py  
+│   ├── planner_agent.py  
+│   ├── responder_agent.py  
 │   ├── tools.py  
 │   ├── tools_schema.py  
-│   ├── planner_agent.py  
-│   ├── critic_agent.py  
-│   ├── responder_agent.py  
 │   ├── abstract_agents/  
+│   │   ├── Top_Tier_Crawling.py  
 │   │   ├── abstract_main.py  
+│   │   ├── get_image.py  
 │   │   ├── agents_B/  
 │   │   │   ├── retriever_agent.py  
 │   │   │   ├── relevance_checker_agent.py  
-│   │   │   ├── answer_generator_agent.py  
+│   │   │   ├── abstract_analysis_agent.py  
 │   │   │   └── hallucination_checker_agent.py  
 │   │   └── abstract_graph/  
 │   │       └── abstract_workflow_graph.py  
 │   └── table_agents/  
 │       ├── table_main.py  
 │       ├── table_list/  
-│       │   ├── 서울시_환경조사_2023.csv  
+│       │   ├── 서울시 대기환경 시민인식 조사.xlsx  
 │       └── agent_C/  
 │       │   ├── retrieval_file_agent.py  
 │       │   ├── table_parser.py  
-│       │   ├── table_numeric_analyzer.py  
-│       │   ├── table_analyzer.py  
-│       │   ├── hallucination_checker.py  
+│       │   ├── numeric_anaylsis_agent.py  
+│       │   ├── table_analysis_agent.py  
+│       │   ├── hallucination_check_agent.py  
 │       │   └── revision_agent.py  
 │       └── table_graph/  
 │           └── table_workflow_graph.py  
-└── tools/  
-    └── duckduckgo_search.py  
 ```

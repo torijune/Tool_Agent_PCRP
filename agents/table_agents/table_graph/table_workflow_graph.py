@@ -3,7 +3,7 @@ from typing import Annotated, TypedDict
 from langchain_core.runnables import Runnable
 from pandas import DataFrame
 
-from agents.table_agents.agent_C.numeric_anaylsis import numeric_analysis_node
+from agents.table_agents.agent_C.numeric_anaylsis_agent import numeric_analysis_node
 from agents.table_agents.agent_C.table_analysis_agent import table_anaylsis_node
 from agents.table_agents.agent_C.table_parser import table_parser_node
 from agents.table_agents.agent_C.retrieval_file_agent import retrieval_table_node
