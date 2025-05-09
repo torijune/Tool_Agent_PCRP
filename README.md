@@ -22,12 +22,17 @@ LangGraph 기반의 Tool-Using Agent 프로젝트입니다.
 
 ## Tool List
 
-- Web Search Tool:
-    - Using duckduckgo_search API for web searching
-- Top-Tier Conference Abstract Analysis AI
-    - LangGraph Multi-Agent
-        - Start → User Inpur Query → Abstracts Retrieval → Retrieved Documents Relevance Check → LLM Answer Generation → Generated Answer Hallucination Check → End 
+### Web Search Tool:
+- Using duckduckgo_search API for web searching
+    
 
+### Top-Tier Conference Abstract Analysis Tool: 
+- LangGraph Multi-Agent
+    - Start → User Inpur Query → Abstracts Retrieval → Retrieved Documents Relevance Check → Critic Checker → Generation Output
+ 
+### Social Survey Structure data (like, table) analysis Tool: 
+- LangGraph Multi-Agent
+    - Start → User Inpur Query → Retrieval Survey File(excel, csv, ...) → Table Parser → Table Numeric Analysis(Pandas - mean, min, max , ...) → Table Analysis(Numeric + Linearlized Table + User Question) → Generated Analysis Result Hallucination Check → Critic Checker → Generation Output
 
 ---
 
@@ -39,10 +44,3 @@ Tool_Agent_PCRP/
 ├── tools/  
 └── README.md  
 
----
-
-## 향후 추가 예정
-
-- [ ] 각 도구 설명 및 schema 문서화
-- [ ] Web UI 연동 (Streamlit/Gradio 등)
-- [ ] 고급 도구 (SQL, 웹 크롤링, 시각화 등) 통합
