@@ -1,5 +1,7 @@
 from langchain_core.runnables import RunnableLambda
 from agents.abstract_agents.abstract_graph.abstract_workflow_graph import build_abstract_graph
+from agents.table_agents.table_graph.table_workflow_graph import build_table_graph
+
 import math
 import re
 from duckduckgo_search import DDGS
@@ -31,10 +33,20 @@ def paper_abstract(query: str):
     result = abstract_graph.invoke(input_state)
     return result.get("retrieved_doc", "분석 결과를 생성하지 못했습니다.")
 
-def table_analysis(table):
+def table_analysis(query):
+    workflow = build_table_graph()
+    result = workflow.invoke({"query": query})
     
-    return 
-
+    hallucination_check = result.get("hallucination_check", "")
+    
+    if hallucination_check == "accept":
+        output = result.get("table_analysis", "⚠️ table_analysis 존재하지 않습니다.")
+        return output
+    elif hallucination_check == "reject":
+        output = result.get("revised_analysis", "⚠️ revised_analysis 존재하지 않습니다.")
+        return output
+    else:
+        return "⚠️ hallucination_check 값이 유효하지 않습니다."
 
 ############################################## Tool Execution ##############################################
 # 🧠 Tool 선택기 (Function Calling 기반)
@@ -42,12 +54,16 @@ def tool_executor(tool_name: str, query: str):
     tool_name = tool_name.lower()
 
     # web search 할 때
-    if tool_name == "search":
+    if tool_name == "web_search":
         return search_web(query)
     
     # 논문 abstract 분석할 때
-    elif tool_name == "abstract analyzer":
+    elif tool_name == "paper_abstract":
         return paper_abstract(query)
+    
+    elif tool_name == "table_analyzer":
+        return table_analysis(query)
+
     else:
         return "❌ 적절한 도구를 찾을 수 없습니다."
 

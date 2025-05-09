@@ -1,5 +1,7 @@
 import pandas as pd
 
+from langchain_core.runnables import RunnableLambda
+
 def analyze_by_category(df: pd.DataFrame) -> dict:
     """
     대분류별로 소분류에 따른 수치 변화를 분석합니다.
@@ -75,8 +77,8 @@ def format_insightful_analysis_to_text(insightful_data: dict) -> str:
 
     return "\n".join(summary_sentences)
 
-def numeric_analysis_node(state):
-
+def numeric_analysis_node_fn(state):
+    print("*" * 10, "Start table numeric analysis", "*" * 10)
     selected_table = state["selected_table"]
 
     grouped = analyze_by_category(selected_table)
@@ -87,3 +89,5 @@ def numeric_analysis_node(state):
     state["numeric_anaylsis"] = numeric_anaylsis
     
     return {**state, "numeric_anaylsis": numeric_anaylsis}
+
+numeric_analysis_node = RunnableLambda(numeric_analysis_node_fn)

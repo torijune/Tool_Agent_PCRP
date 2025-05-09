@@ -5,29 +5,27 @@ from dotenv import load_dotenv
 
 from langchain_openai import ChatOpenAI
 from langchain_core.runnables import RunnableLambda
-from agents.tools_schema import function_schema
+from agents.tools_schema import tools_schema
 
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
+# 🔧 최신 도구 설명이 포함된 function_call 기반 모델 생성
 llm = ChatOpenAI(
-    model="gpt-4o",  # function calling은 gpt-4-0613, gpt-4o 등 지원 모델 필요
+    model="gpt-4o",  # function calling 지원 모델
     temperature=0.2,
-    model_kwargs={"functions": function_schema}
+    model_kwargs={"functions": tools_schema}
 )
 
+# ✅ 프롬프트 수정: 도구 이름을 직접 쓰는 대신 함수 설명 기반으로 선택 유도
 PLANNER_PROMPT = """
-You are a smart tool-planning assistant. Based on the user query below, select the most appropriate tool to handle the task.
+You are a smart tool-planning assistant. Based on the user query, select the best tool and explain your choice in the `reason` field.
 
-You can choose from the following tools:
-1. "search": Use this for general information retrieval from the web (e.g., current events, websites, product info).
-2. "abstract analyzer": Use this for understanding or answering questions using academic paper abstracts (e.g., questions related to research topics or technical summaries).
+Use the function schema provided to you.
 
-Return a function call to `use_tool` with:
-- tool_name: either "search" or "abstract analyzer"
-- task_description: one-line task description
-
-Do not explain your answer. Only respond via function_call.
+Return only a function_call to `use_tool` with:
+- tool_name: the selected tool (as defined in the schema)
+- reason: short justification
 """
 
 def planner_fn(state: dict) -> dict:
@@ -37,23 +35,21 @@ def planner_fn(state: dict) -> dict:
         {"role": "user", "content": query}
     ]
 
+    # ⏬ 함수 호출 유도
     response = llm.invoke(messages)
     function_call = response.additional_kwargs.get("function_call", {})
 
-    tool_name = ""
-    task_description = ""
-
     try:
-        # 🧠 arguments는 JSON 문자열이므로 반드시 파싱해야 함
         arguments_raw = function_call.get("arguments", "{}")
         arguments = json.loads(arguments_raw)
 
         tool_name = arguments.get("tool_name", "")
-        task_description = arguments.get("task_description", "")
+        reason = arguments.get("reason", "")
+
+        print(f"🧭 선택된 도구: {tool_name} → {reason}")
+        return {**state, "plan": tool_name, "plan_desc": reason}
     except Exception as e:
         print(f"❌ Function call 처리 중 오류 발생: {e}")
-
-    print(f"🧭 선택된 도구: {tool_name} → {task_description}")
-    return {**state, "plan": tool_name, "plan_desc": task_description}
-
+        return {**state, "plan": "", "plan_desc": ""}
+        
 planner_node = RunnableLambda(planner_fn)

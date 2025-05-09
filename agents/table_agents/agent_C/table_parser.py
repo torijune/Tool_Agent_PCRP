@@ -2,6 +2,8 @@ import pandas as pd
 import re
 from collections import defaultdict
 
+from langchain_core.runnables import RunnableLambda
+
 '''
 사용법: 
 # 함수 사용법
@@ -106,13 +108,23 @@ def select_table(tables, question_keys, question_texts, index):
     selected_question = question_texts[selected_key]
     return selected_table, selected_question
 
-def table_parser_node(state):
+def table_parser_node_fn(state):
+    print("*" * 10, "Start table parsing", "*" * 10)
     file_path = state["file_path"]
     table, question_texts, question_keys = load_survey_tables(file_path)
+
+    # ✅ 모든 질문 목록 보여주기
+    print("\n📝 질문 목록:")
+    for idx, key in enumerate(question_keys):
+        print(f"{idx + 1}. [{key}] {question_texts[key]}")
+
+    # 특정 table만 뽑아오기
     index = str(input("질문 index를 입력세요: \n"))
     selected_table, selected_question = select_table(table, question_keys, question_texts, index)
 
     linearized_table = linearize_row_wise(selected_table)
+
+    state["question_texts"] = question_texts
     state["selected_table"] = selected_table
     state["table"] = table
     state["selected_question"] = selected_question
@@ -121,9 +133,12 @@ def table_parser_node(state):
 
     return {
         **state,
+        "question_texts": question_texts, 
         "selected_table": selected_table,
         "table": table,
         "selected_question": selected_question,
         "question_keys": question_keys,
         "linearized_table": linearized_table,
     }
+
+table_parser_node = RunnableLambda(table_parser_node_fn)

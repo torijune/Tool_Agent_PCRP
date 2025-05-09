@@ -40,7 +40,8 @@ TABLE_PROMPT = """
 대기환경에 대한 관심도는 연령, 건강상태, 주요 체류 공간에 따라 유의미한 차이를 보였다. 특히 60대 이상은 평균 4.1점으로 다른 연령대보다 높은 관심을 보였으며, 기저질환자는 ‘매우 관심 있다’ 비율이 상대적으로 높았다. 실외 활동이 많은 그룹 역시 관심도 평균이 4.0으로 높은 편이었다.
 """
 
-def table_anaylsis_node(state):
+def table_anaylsis_node_fn(state):
+    print("*" * 10, "Start table anaylzing", "*" * 10)
     linearized_table = state["linearized_table"]
     numeric_anaylsis = state["numeric_anaylsis"]
     selected_question = state["selected_question"]
@@ -55,3 +56,5 @@ def table_anaylsis_node(state):
     # print(f"📄 검색된 논문 요약 (미리보기):\n{retrieved_doc[:300]}...")
 
     return {**state, "table_analysis": table_analysis}
+
+table_anaylsis_node = RunnableLambda(table_anaylsis_node_fn)
