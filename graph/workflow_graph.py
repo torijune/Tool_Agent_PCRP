@@ -14,7 +14,6 @@ class AgentState(TypedDict):
     decision: Annotated[str, "decision"]
     final_answer: Annotated[str, "final_answer"]
     plan_desc: Annotated[str, "plan_desc"]
-    reject_number: Annotated[int, "Number of times the plan was rejected"]
 
 def build_workflow_graph() -> Runnable:
     builder = StateGraph(state_schema=AgentState)
@@ -41,13 +40,11 @@ def build_workflow_graph() -> Runnable:
     # 🔀 조건 분기 함수
     def route_critic(state: dict) -> str:
         decision = state.get("decision", "")
-        reject_num = state.get("reject_number", 0)
 
         if decision == "accept":
             return "responder"
         
         elif decision == "reject":
-            state["reject_number"] = reject_num + 1
             return "planner"
         else:
             raise ValueError(f"Unexpected decision: {decision}")

@@ -40,8 +40,8 @@ else:
 def retriever_node(state: dict) -> dict:
     query = state["query"]
     plan_desc = state.get("plan_desc", "")
-    reject_number = state.get("reject_number", 0)
-    print("Tool critic reject number: ", reject_number)
+    relevance_reject_num = state.get("relevance_reject_num", 0)
+    print("Tool critic reject number: ", relevance_reject_num)
 
     # 쿼리 임베딩
     query_emb = embedding_model.embed_query(query)
@@ -57,11 +57,11 @@ def retriever_node(state: dict) -> dict:
     query_scores = [cosine_sim(query_emb, v) for v in stored_vectors]
     plan_scores = [cosine_sim(plan_emb, v) for v in stored_vectors]
 
-    if reject_number == 0:
+    if relevance_reject_num == 0:
         combined_scores = [(i, (q + p) / 2) for i, (q, p) in enumerate(zip(query_scores, plan_scores))]
-    elif reject_number == 1:
+    elif relevance_reject_num == 1:
         combined_scores = [(i, (0.3 * q + 0.7 * p)) for i, (q, p) in enumerate(zip(query_scores, plan_scores))]
-    elif reject_number == 2:
+    elif relevance_reject_num == 2:
         combined_scores = [(i, (0.7 * q + 0.3 * p)) for i, (q, p) in enumerate(zip(query_scores, plan_scores))]
     else:
         # MMR 검색 (문서 제목 포함된 summary로 대체)
