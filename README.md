@@ -36,7 +36,7 @@ LangGraph 기반의 Tool-Using Agent 프로젝트입니다.
 - LangGraph Multi-Agent
     - Start → User Inpur Query → Retrieval Survey File(excel, csv, ...) → Table Parser → Table Numeric Analysis(Pandas - mean, min, max , ...) → Table Analysis(Numeric + Linearlized Table + User Question) → Generated Analysis Result Hallucination Check → Critic Checker → Generation Output
 
-![Social Survey Analysis Tool Overview](TabelFlow.png)
+![Social Survey Analysis Tool Overview](TableFlow.png)
 ---
 
 ## 디렉토리 구조
