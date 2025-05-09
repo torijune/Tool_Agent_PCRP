@@ -6,7 +6,7 @@ LangGraph 기반의 Tool-Using Agent 프로젝트입니다.
 > **P**lanning → **Tool Execution** → **Critic Evaluation** → (Re-)**Planning**
 ## System Overview
 
-![System Overview](SystemOverview.png)
+![System Overview](SystemOverview.png)
 
 ---
 
@@ -29,11 +29,14 @@ LangGraph 기반의 Tool-Using Agent 프로젝트입니다.
 ### Top-Tier Conference Abstract Analysis Tool: 
 - LangGraph Multi-Agent
     - Start → User Inpur Query → Abstracts Retrieval → Retrieved Documents Relevance Check → Critic Checker → Generation Output
- 
+
+![Abstract Analysis Tool Overview](AbstractFlow.png)
+
 ### Social Survey Structure data (like, table) analysis Tool: 
 - LangGraph Multi-Agent
     - Start → User Inpur Query → Retrieval Survey File(excel, csv, ...) → Table Parser → Table Numeric Analysis(Pandas - mean, min, max , ...) → Table Analysis(Numeric + Linearlized Table + User Question) → Generated Analysis Result Hallucination Check → Critic Checker → Generation Output
 
+![Social Survey Analysis Tool Overview](TabelFlow.png)
 ---
 
 ## 디렉토리 구조
