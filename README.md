@@ -8,6 +8,17 @@ LangGraph 기반의 Tool-Using Agent 프로젝트입니다.
 
 ![System Overview](SystemOverview.png)
 
+### Main System Mermaid Pipeline Diagram
+```mermaid
+%%{init: {'theme':'default', 'flowchart': {'nodeSpacing': 20, 'rankSpacing': 20}}}%%
+graph TD
+    A[Start: planner] --> B[tool_caller]
+    B --> C[critic]
+    C -->|accept| D[responder]
+    D --> E[END]
+    C -->|reject| A
+```
+
 ---
 
 ## 구성 개요
@@ -22,6 +33,15 @@ LangGraph 기반의 Tool-Using Agent 프로젝트입니다.
 
 ## Tool List
 
+```mermaid
+%%{init: {'theme':'default', 'flowchart': {'nodeSpacing': 20, 'rankSpacing': 20}}}%%
+graph TD
+    A[User Query] --> B[Planner_use_tool]
+    B --> C[web_search]
+    B --> D[paper_abstract]
+    B --> E[table_analyzer]
+```
+
 ### Web Search Tool:
 - Using duckduckgo_search API for web searching
     
@@ -32,29 +52,40 @@ LangGraph 기반의 Tool-Using Agent 프로젝트입니다.
 
 ![Abstract Analysis Tool Overview](AbstractFlow.png)
 
+#### Abstract Analysis Tool Mermaid Pipeline Diagram
+```mermaid
+%%{init: {'theme':'default', 'flowchart': {'nodeSpacing': 20, 'rankSpacing': 20}}}%%
+graph TD
+    A[Start] --> B[retriever]
+    B --> C[relevance_checker]
+    C -->|accept| D[END]
+    C -->|reject| B
+```
+
 ### Social Survey Structure data (e.g. table) analysis Tool: 
 - Custom LangGraph Multi-Agent
     - Start → User Inpur Query → Retrieval Survey File(excel, csv, ...) → Table Parser → Generating Hypothesis about rows and columns → Table Numeric Analysis(Pandas - mean, min, max , ...) → Table Analysis(Numeric + Linearlized Table + User Question) → Generated Analysis Result Hallucination Check → Sentence Polishing → Critic Checker → Generation Output
 
 ![Social Survey Analysis Tool Overview](TableFlow.png)
 
-### 📊 Mermaid Pipeline Diagram
+#### Social Survey Structure data analysis Tool Mermaid Pipeline Diagram
 
 ```mermaid
+%%{init: {'theme':'default', 'flowchart': {'nodeSpacing': 20, 'rankSpacing': 20}}}%%
 graph TD
-    A[Start: retrieval_table_node] --> B[table_parser]
-    B --> C[hypothesis_generate_node]
-    C --> D[numeric_analyzer]
-    D --> E[table_analyzer]
-    E --> F{hallucination_check_node}
+    A[Start] --> B[Parser]
+    B --> C[Hypothesis]
+    C --> D[Numeric]
+    D --> E[Analysis]
+    E --> F{Hallucination}
 
-    F -->|accept| G[sentence_polish_node]
+    F -->|accept| G[Polish]
     G --> H[END]
 
-    F -->|reject & reject_num < 3| I[revise_table_analysis]
+    F -->|reject < 3| I[Revise]
     I --> F
 
-    F -->|reject & reject_num >= 3| H
+    F -->|reject >= 3| H
 ```
 ---
 
