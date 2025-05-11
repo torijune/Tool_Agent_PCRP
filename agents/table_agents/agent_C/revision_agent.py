@@ -10,11 +10,10 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.3)
 
-
 REVISION_PROMPT = """
 당신은 통계 데이터를 바탕으로 인구집단 간 패턴과 경향성을 객관적으로 요약하는 데이터 분석 전문가입니다.
 
-아래는 테이블 분석 결과에 대해 일부 잘못된 해석이 포함된 요약입니다. 피드백을 참고하여 잘못된 내용을 제거하고, 원본 데이터를 기반으로 수치 기반의 객관적 분석을 다시 작성할 것.
+아래는 테이블 분석 결과에 대해 일부 잘못된 해석이 포함된 요약입니다. 피드백과 사전에 생성된 가설을 참고하여 잘못된 내용을 제거하고, 원본 데이터를 기반으로 수치 기반의 객관적 분석을 다시 작성할 것.
 
 📝 설문 조사 질문:
 {selected_question}
@@ -24,6 +23,9 @@ REVISION_PROMPT = """
 
 📈 수치 분석 결과 (대분류별 항목별 최고/최저 값, 표준편차, 범위 등):
 {numeric_anaylsis}
+
+💡 사전에 생성된 가설 (참고용):
+{generated_hypotheses}
 
 📝 기존 요약 (잘못된 부분 포함):
 {table_analysis}
@@ -61,21 +63,32 @@ Let's think step by step
 """
 
 def revise_table_analysis_fn(state):
-    print("*" * 10, "Start table analysis revision", "*" * 10)
+    print("\n********** Start table analysis revision **********")
 
-    prompt = REVISION_PROMPT.format(
-        selected_question=state["selected_question"],
-        linearized_table=state["linearized_table"],
-        numeric_anaylsis=state["numeric_anaylsis"],
-        table_analysis=state["table_analysis"],
-        feedback=state["feedback"]
-    )
+    if state["hallucination_reject_num"] == 0:
+        prompt = REVISION_PROMPT.format(
+            selected_question=state["selected_question"],
+            linearized_table=state["linearized_table"],
+            numeric_anaylsis=state["numeric_anaylsis"],
+            table_analysis=state["table_analysis"],
+            feedback=state["feedback"],
+            generated_hypotheses=state.get("generated_hypotheses", "해당 없음")
+        )
+    else:
+        prompt = REVISION_PROMPT.format(
+            selected_question=state["selected_question"],
+            linearized_table=state["linearized_table"],
+            numeric_anaylsis=state["numeric_anaylsis"],
+            table_analysis=state["revised_analysis"],
+            feedback=state["feedback"],
+            generated_hypotheses=state.get("generated_hypotheses", "해당 없음")
+        )
 
     response = llm.invoke(prompt)
     revised_analysis = response.content.strip()
 
-
-    print("수정된 보고서 :", revised_analysis)
+    print("\n✅ 수정된 보고서:")
+    print(revised_analysis)
 
     return {
         **state,

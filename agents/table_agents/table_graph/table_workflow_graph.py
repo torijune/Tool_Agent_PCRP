@@ -11,6 +11,7 @@ from agents.table_agents.agent_C.retrieval_file_agent import retrieval_table_nod
 from agents.table_agents.agent_C.hallucination_check_agent import hallucination_check_node
 from agents.table_agents.agent_C.revision_agent import revise_table_analysis_node
 from agents.table_agents.agent_C.polish_agent import sentence_polish_node
+from agents.table_agents.agent_C.hypothesis_generation import hypothesis_generate_node
 
 
 class AgentState(TypedDict):
@@ -33,6 +34,8 @@ class AgentState(TypedDict):
     feedback: Annotated[str, "LLM feedback"]
 
     polishing_result: Annotated[str, "Final sentence polishing step output"]
+    generated_hypotheses: Annotated[str, "Generated hypothesis for table"]
+    
 
 
 def build_table_graph() -> Runnable:
@@ -46,6 +49,7 @@ def build_table_graph() -> Runnable:
     builder.add_node("hallucination_check_node", hallucination_check_node)
     builder.add_node("revise_table_analysis", revise_table_analysis_node)
     builder.add_node("sentence_polish_node", sentence_polish_node)
+    builder.add_node("hypothesis_generate_node", hypothesis_generate_node)
 
     # Input | Output
     # query | file_path
@@ -54,13 +58,16 @@ def build_table_graph() -> Runnable:
     # file_path | selected_table, table, selected_question, question_keys, linearized_table
     builder.add_edge("retrieval_table_node", "table_parser")
 
-    # selected_table | numeric_anaylsis
-    builder.add_edge("table_parser", "numeric_analyzer")
+    # selected_table, selected_question | hypothesis
+    builder.add_edge("table_parser", "hypothesis_generate_node")
 
-    # linearized_table, numeric_anaylsis, selected_question | table_analysis
+    # selected_table | numeric_anaylsis
+    builder.add_edge("hypothesis_generate_node", "numeric_analyzer")
+
+    # linearized_table, hypothesis, numeric_anaylsis, selected_question | table_analysis
     builder.add_edge("numeric_analyzer", "table_analyzer")
 
-    # linearized_table, numeric_anaylsis, selected_question, table_analysis | hallucination_check, feedback
+    # linearized_table, hypothesis, numeric_anaylsis, selected_question, table_analysis | hallucination_check, feedback
     builder.add_edge("table_analyzer", "hallucination_check_node")
 
     def route_hallucination(state):
@@ -72,7 +79,7 @@ def build_table_graph() -> Runnable:
         if hallucination_check == "accept":
             return "sentence_polish_node"
         elif hallucination_check == "reject":
-            if hallucination_reject_num >= 3:  # 3번째에서 끝내기 (0,1,2 = 총 3번 시도)
+            if hallucination_reject_num >= 3:  # revision은 최대 3번만 -> 무한 루프 방지
                 print("⚠️ Reject count exceeded. Forcing END.")
                 return END
             else:
@@ -80,9 +87,13 @@ def build_table_graph() -> Runnable:
         else:
             raise ValueError(f"Unexpected decision: {hallucination_check}")
 
+    # hallucination_check, feedback | revised_analysis or polishing_result
     builder.add_conditional_edges("hallucination_check_node", route_hallucination, ["sentence_polish_node", END, "revise_table_analysis"])
 
+    # revised_analysis | hallucination_check, feedback
     builder.add_edge("revise_table_analysis", "hallucination_check_node")
+
+    # polishing_result
     builder.add_edge("sentence_polish_node", END)
 
     graph = builder.compile()

@@ -22,6 +22,9 @@ TABLE_PROMPT = """
 📈 수치 분석 결과 (대분류별 항목별 최고/최저 값, 표준편차, 범위 등):
 {numeric_anaylsis}
 
+💡 데이터 기반 자동 생성 가설 목록 (참고용):
+{generated_hypotheses}
+
 ---
 
 Let's think step by step
@@ -38,6 +41,7 @@ Let's think step by step
 8. 지나치게 단절적 (~했음. ~했음. 반복) 표현을 지양하고, 관련된 그룹들은 **연결어를 활용해 한 문장으로 묶을 것**
 9. 가독성을 높이기 위해 동일한 의미의 그룹이 중복되지 않도록 주의할 것
 10. 보고서에 정확한 수치는 쓰지 말고, 수치 차이에 기반한 경향만 서술할 것
+11. 위의 '데이터 기반 가설'을 참고해 해당 가설을 검증하거나 관련 경향성을 발견하려 노력할 것
 
 ---
 
@@ -56,10 +60,12 @@ def table_anaylsis_node_fn(state):
     linearized_table = state["linearized_table"]
     numeric_anaylsis = state["numeric_anaylsis"]
     selected_question = state["selected_question"]
+    generated_hypotheses = state["generated_hypotheses"]
 
     response = llm.invoke(TABLE_PROMPT.format(selected_question = selected_question,
                                                linearized_table=linearized_table,
-                                                 numeric_anaylsis=numeric_anaylsis))
+                                                 numeric_anaylsis=numeric_anaylsis,
+                                                 generated_hypotheses = generated_hypotheses))
     table_analysis = response.content.strip()
 
     # print("💬 Table Anaylsis 시작")
