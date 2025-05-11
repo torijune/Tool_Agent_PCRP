@@ -37,6 +37,25 @@ LangGraph 기반의 Tool-Using Agent 프로젝트입니다.
     - Start → User Inpur Query → Retrieval Survey File(excel, csv, ...) → Table Parser → Generating Hypothesis about rows and columns → Table Numeric Analysis(Pandas - mean, min, max , ...) → Table Analysis(Numeric + Linearlized Table + User Question) → Generated Analysis Result Hallucination Check → Sentence Polishing → Critic Checker → Generation Output
 
 ![Social Survey Analysis Tool Overview](TableFlow.png)
+
+### 📊 Mermaid Pipeline Diagram
+
+```mermaid
+graph TD
+    A[Start: retrieval_table_node] --> B[table_parser]
+    B --> C[hypothesis_generate_node]
+    C --> D[numeric_analyzer]
+    D --> E[table_analyzer]
+    E --> F{hallucination_check_node}
+
+    F -->|accept| G[sentence_polish_node]
+    G --> H[END]
+
+    F -->|reject & reject_num < 3| I[revise_table_analysis]
+    I --> F
+
+    F -->|reject & reject_num >= 3| H
+```
 ---
 
 
@@ -75,13 +94,14 @@ Tool_Agent_PCRP/
 │       │   ├── 서울시 대기환경 시민인식 조사.xlsx  
 │       │   ├── 고양시 도시주거환경정비기본계획 조사.xlsx  
 │       └── agent_C/  
-│       │   ├── retrieval_file_agent.py  
-│       │   ├── table_parser.py  
-│       │   ├── numeric_anaylsis_agent.py  
-│       │   ├── table_analysis_agent.py  
 │       │   ├── hallucination_check_agent.py  
+│       │   ├── hypothesis_generation.py  
+│       │   ├── numeric_anaylsis_agent.py  
 │       │   ├── polish_agent.py  
-│       │   └── revision_agent.py  
+│       │   ├── retrieval_file_agent.py  
+│       │   ├── revision_agent.py  
+│       │   ├── table_analysis_agent.py  
+│       │   └── table_parser.py  
 │       └── table_graph/  
 │           └── table_workflow_graph.py  
 ```
