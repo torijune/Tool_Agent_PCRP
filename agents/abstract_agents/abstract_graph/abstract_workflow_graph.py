@@ -12,8 +12,8 @@ class AgentState(TypedDict):
     relevance_decision: Annotated[str, "relevance_decision"]
     generated_analysis: Annotated[str, "generated_analysis"]
     hallucination_decision: Annotated[str, "hallucination_decision"]
-    relevance_reject_num: Annotated[str, "relevance_reject_num"]
-
+    relevance_reject_num: Annotated[int, "relevance_reject_num"]
+    
 
 def build_abstract_graph() -> Runnable:
     builder = StateGraph(state_schema=AgentState)

@@ -10,7 +10,7 @@ available_tables = [
     if f.endswith(".csv") or f.endswith(".xlsx")
 ]
 
-# ✅ table_analyzer 설명에 통합
+# 내가 갖고 있는 파일들을 planner가 보고 판단할 수 있도록 table_analyzer 설명에 통합
 tool_description = "\n".join([
     "- web_search: 최신 정보나 웹 기반 일반 지식을 검색할 때 사용합니다. (예: 특정 사건의 최근 뉴스, 일반 상식)",
     "- paper_abstract: 논문 초록을 분석하여 사용자의 질문에 관련된 연구 내용을 요약할 때 사용합니다. (예: RAG 관련 최신 연구 동향 요약)",

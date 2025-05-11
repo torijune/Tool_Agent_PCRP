@@ -8,7 +8,7 @@ from langchain_core.runnables import RunnableLambda
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.3)
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.5)
 
 
 HALLUCINATION_CHECK_PROMPT = """
@@ -28,20 +28,36 @@ HALLUCINATION_CHECK_PROMPT = """
 🧾 생성된 요약:
 {table_analysis}
 
-이 요약이 위의 표와 수치 분석 결과를 정확히 반영하고 있는지 평가해주세요.
+이 요약이 위의 표와 수치 분석 결과를 **크게 벗어나지 않고 전반적으로 일관성 있게** 반영하고 있는지 평가해주세요.
 
-- 표에서 유추할 수 없는 근거 없는 내용이 있다면 "reject: [이유]" 형식으로 출력하세요.
-- 만약 요약이 충분히 객관적이고 수치 기반이면 "accept"라고만 출력하세요.
+⚠️ 주의:
+- 약간의 표현 차이, 어순 변화, 경미한 해석적 표현은 허용됩니다.
+- 다만 **중요 수치, 주요 경향, 그룹 간 순위** 등 핵심적인 사실 왜곡이 있으면 reject 하세요.
+
+🎯 평가 방식:
+- 요약이 전체적으로 신뢰할 만하고 사실 기반이면 "accept"라고만 출력하세요.
+- 요약에서 **명확한 사실 오류, 수치 왜곡, 잘못된 결론**이 있으면 "reject: [이유]" 형식으로 출력하세요.
 """
 
 def hallucination_check_node_fn(state):
     print("*" * 10, "Start table analysis hallucination check", "*" * 10)
-    prompt = HALLUCINATION_CHECK_PROMPT.format(
-        selected_question=state["selected_question"],
-        linearized_table=state["linearized_table"],
-        numeric_anaylsis=state["numeric_anaylsis"],
-        table_analysis=state["table_analysis"]
-    )
+    
+    hallucination_reject_num = state.get("hallucination_reject_num", 0)
+
+    if hallucination_reject_num == 0:
+        prompt = HALLUCINATION_CHECK_PROMPT.format(
+            selected_question=state["selected_question"],
+            linearized_table=state["linearized_table"],
+            numeric_anaylsis=state["numeric_anaylsis"],
+            table_analysis=state["table_analysis"]
+        )
+    else:
+        prompt = HALLUCINATION_CHECK_PROMPT.format(
+            selected_question=state["selected_question"],
+            linearized_table=state["linearized_table"],
+            numeric_anaylsis=state["numeric_anaylsis"],
+            table_analysis=state["revised_analysis"]
+        )
 
     response = llm.invoke(prompt)
     result = response.content.strip()
@@ -50,6 +66,7 @@ def hallucination_check_node_fn(state):
     if result.lower().startswith("reject"):
         decision = "reject"
         feedback = result[len("reject"):].strip(": ").strip()
+        hallucination_reject_num = hallucination_reject_num + 1
         print("Hallucination Check 결과: ", decision)
         print("\nLLM Feedback: ", feedback)
     else:
@@ -57,6 +74,10 @@ def hallucination_check_node_fn(state):
         print("Hallucination Check 결과: ", decision)
         feedback = ""
 
-    return {**state, "hallucination_check": decision, "feedback": feedback}
+    return {**state, 
+            "hallucination_check": decision, 
+            "feedback": feedback,
+            "hallucination_reject_num": hallucination_reject_num
+            }
 
 hallucination_check_node = RunnableLambda(hallucination_check_node_fn)

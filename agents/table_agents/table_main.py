@@ -17,7 +17,8 @@ def get_result(query: str):
 
 # ⚠️ 아래 코드는 테스트 용도로만 사용되며 import 시 실행되지 않도록 보호됨
 if __name__ == "__main__":
-    query = input("질문을 입력하세요: ")
+    # query = input("질문을 입력하세요: ")
+    query = "고양시에서 수행하는 도시 주거 개발 계획에 대해서 궁금해"
     output = get_result(query)
     print(output)
 
