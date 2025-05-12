@@ -67,11 +67,11 @@ def get_all_result_to_doc(file_path, output_path="analysis_report.docx"):
 
 
 if __name__ == "__main__":
-    # # query = input("질문을 입력하세요: ")
-    # query = "고양시에서 수행하는 도시 주거 개발 계획에 대해서 궁금해"
-    # output = get_result(query)
-    # print(output)
+    # query = input("질문을 입력하세요: ")
+    query = "서울시의 대기환경에 대한 조사에 대해서 알고싶어"
+    output = get_result(query)
+    print(output)
 
-    # All Question
-    file_path = "/Users/jang-wonjun/Desktop/Dev/Tool_Agent_PCRP/agents/table_agents/table_list/고양시 도시주거환경정비기본계획 조사.xlsx"
-    get_all_result_to_doc(file_path, output_path="대기환경_시민인식조사_보고서.docx")
+    # # All Question
+    # file_path = "/Users/jang-wonjun/Desktop/Dev/Tool_Agent_PCRP/agents/table_agents/table_list/고양시 도시주거환경정비기본계획 조사.xlsx"
+    # get_all_result_to_doc(file_path, output_path="대기환경_시민인식조사_보고서.docx")

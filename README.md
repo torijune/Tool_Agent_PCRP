@@ -3,7 +3,9 @@
 LangGraph 기반의 Tool-Using Agent 프로젝트입니다.  
 이 에이전트는 다음과 같은 구조를 따릅니다:
 
-> **P**lanning → **Tool Execution** → **Critic Evaluation** → (Re-)**Planning**
+> **P**lanning → Tool Execution → **C**ritic Evaluation → (**R**e-)**P**lanning  
+
+본 프로젝트는 Tool Critic Agent 개발 이후, LangGraph 기반의 다양한 유용한 Tool 연구 및 개발에 집중하고 있습니다. Critic Loop은 기본 프레임워크로만 구축되었으며, 주요 목표는 실험적 Tool Agent 설계 및 최적화입니다.
 ## System Overview
 
 ![System Overview](SystemOverview.png)
