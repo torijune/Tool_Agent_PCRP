@@ -20,6 +20,7 @@ class AgentState(TypedDict):
     # table: Annotated[DataFrame, "Loaded Table formatted pandas DataFrames"]
     # question_texts: Annotated[str, "question_texts"]
 
+    analysis_type: Annotated[bool, "select anaylsis type - True: each question, False: all questions"]
     selected_question: Annotated[str, "selected_question"]
     selected_table: Annotated[DataFrame, "Selected Table formatted pandas DataFrame"]
 
