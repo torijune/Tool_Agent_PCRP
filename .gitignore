@@ -1,5 +1,6 @@
 data/
 *.env
+*.docx
 __pycache__/
 Notebook/
 agents/abstract_agents/data/
