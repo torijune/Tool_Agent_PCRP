@@ -3,55 +3,52 @@ import streamlit as st
 
 from langchain_core.runnables import RunnableLambda
 
-def analyze_by_category(df: pd.DataFrame) -> dict:
+def analyze_column_variation(df: pd.DataFrame, range_threshold=5.0, std_threshold=3.0):
     numeric_cols = df.select_dtypes(include=["number"]).columns
     results = {}
 
+    # ✅ 1️⃣ 전체 평균이 가장 높은 anchor column 찾기
+    col_means = df[numeric_cols].mean()
+    anchor_col = col_means.idxmax()
+
+    # ✅ 2️⃣ anchor_col을 중심으로 분석 진행
     for category in df["대분류"].unique():
         group_df = df[df["대분류"] == category]
+        if anchor_col not in group_df.columns:
+            continue
+
         group_result = {}
+        col_data = group_df[anchor_col]
+        if col_data.isnull().all():
+            continue
 
-        for col in numeric_cols:
-            if "사례수" in col:
-                continue
+        max_val = round(col_data.max(), 2)
+        min_val = round(col_data.min(), 2)
+        std_val = round(col_data.std(), 2)
 
-            col_data = group_df[col]
-            if col_data.isnull().all():
-                continue
+        max_group = group_df.loc[col_data.idxmax(), "소분류"]
+        min_group = group_df.loc[col_data.idxmin(), "소분류"]
 
-            max_val = round(col_data.max(), 2)
-            min_val = round(col_data.min(), 2)
-            std_val = round(col_data.std(), 2)
-
-            max_group = group_df.loc[col_data.idxmax(), "소분류"]
-            min_group = group_df.loc[col_data.idxmin(), "소분류"]
-
-            group_result[col.strip()] = {
+        # ✅ 3️⃣ threshold 기반 filtering
+        if (max_val - min_val) >= range_threshold or std_val >= std_threshold:
+            group_result[anchor_col] = {
                 "max_group": str(max_group),
                 "min_group": str(min_group),
                 "range": round(max_val - min_val, 2),
                 "std": std_val
             }
 
-        results[category.strip()] = group_result
+        if group_result:
+            results[category.strip()] = group_result
 
-    return results
+    return results, anchor_col
 
-def extract_insightful_analysis(grouped_stats: dict, range_threshold=5.0, std_threshold=3.0):
-    insightful_data = {}
-    for category, col_dict in grouped_stats.items():
-        category_result = {}
-        for col, stats in col_dict.items():
-            if stats["range"] >= range_threshold or stats["std"] >= std_threshold:
-                category_result[col] = stats
-        if category_result:
-            insightful_data[category] = category_result
-    return insightful_data
-
-def format_insightful_analysis_to_text(insightful_data: dict) -> str:
+def format_anchor_analysis(insightful_data: dict, anchor_col: str) -> str:
     summary_sentences = []
+    summary_sentences.append(f"✅ 전체 데이터에서 가장 비중이 높은 분석 anchor column은 **'{anchor_col}'** 입니다.\n")
+
     for category, stats in insightful_data.items():
-        summary_sentences.append(f"[{category}] 항목에서는 다음과 같은 특이점이 관찰되었습니다.")
+        summary_sentences.append(f"### [{category}]")
         for col, detail in stats.items():
             max_group = detail["max_group"]
             min_group = detail["min_group"]
@@ -59,8 +56,8 @@ def format_insightful_analysis_to_text(insightful_data: dict) -> str:
             std_val = detail["std"]
             sentence = (
                 f"- '{col}' 항목은 '{max_group}' 그룹에서 가장 높고, "
-                f"'{min_group}' 그룹에서 가장 낮았습니다. "
-                f"해당 항목의 값 범위는 {range_val}이며, 표준편차는 {std_val}입니다."
+                f"'{min_group}' 그룹에서 가장 낮았음. "
+                f"(Range={range_val}, Std={std_val})"
             )
             summary_sentences.append(sentence)
         summary_sentences.append("")
@@ -71,32 +68,12 @@ def streamlit_numeric_analysis_node_fn(state):
     selected_table = state["selected_table"]
 
     with st.spinner("표 데이터 분석 중..."):
-        grouped = analyze_by_category(selected_table)
-        insights = extract_insightful_analysis(grouped)
-        numeric_analysis_text = format_insightful_analysis_to_text(insights)
+        insights, anchor_col = analyze_column_variation(selected_table)
+        numeric_analysis_text = format_anchor_analysis(insights, anchor_col)
 
-    # 🎯 ✅ 개선된 출력: 카테고리별 expander + markdown
-    st.markdown("### ✅ Generated Numeric Analyses")
-    current_category = None
-    buffer = ""
-
-    for line in numeric_analysis_text.split("\n"):
-        # 새로운 카테고리 시작
-        if line.startswith("[") and line.endswith("] 항목에서는 다음과 같은 특이점이 관찰되었습니다."):
-            # 기존 카테고리 출력
-            if current_category and buffer:
-                with st.expander(current_category, expanded=False):
-                    st.markdown(buffer)
-            # 새로운 카테고리 준비
-            current_category = line.replace(" 항목에서는 다음과 같은 특이점이 관찰되었습니다.", "")
-            buffer = ""
-        else:
-            buffer += line + "\n"
-
-    # 마지막 카테고리 출력
-    if current_category and buffer:
-        with st.expander(current_category, expanded=False):
-            st.markdown(buffer)
+    # ✅ Streamlit 출력
+    st.markdown("### 📊 Numeric Analysis 결과")
+    st.markdown(numeric_analysis_text)
 
     return {**state, "numeric_anaylsis": numeric_analysis_text}
 
