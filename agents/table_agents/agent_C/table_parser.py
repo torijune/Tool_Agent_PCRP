@@ -19,21 +19,11 @@ Table: tables["QUESTION_KEY"]
     e.g. A2에 대한 table: tables["A2"]
 '''
 
+import pandas as pd
+from collections import defaultdict
+import re
+
 def load_survey_tables(file_path: str, sheet_name: str = "통계표"):
-    """
-    엑셀 파일에서 서울시 대기환경 조사 설문표를 파싱하여
-    테이블, 질문 문장, 질문 키 목록을 반환합니다.
-
-    Args:
-        file_path (str): 엑셀 파일 경로
-        sheet_name (str): 읽어올 시트 이름 (기본값: "통계표")
-
-    Returns:
-        tables (dict): {질문 key: 설문 결과 테이블}
-        question_texts (dict): {질문 key: 질문 전체 문장}
-        question_keys (list): 질문 key 목록
-    """
-
     df = pd.read_excel(file_path, sheet_name=sheet_name, header=None)
 
     pattern = r"^[A-Z]+\d*[-.]?\d*\."
@@ -60,23 +50,61 @@ def load_survey_tables(file_path: str, sheet_name: str = "통계표"):
         question_keys.append(final_key)
 
         table = df.iloc[start + 1:end].reset_index(drop=True)
+
         if len(table) >= 2:
-            new_columns = table.iloc[0].fillna('').astype(str) + " " + table.iloc[1].fillna('').astype(str)
-            new_columns.iloc[0] = "대분류"
-            if len(new_columns) > 1:
-                new_columns.iloc[1] = "소분류"
+            # 테이블 제목 제거 및 컬럼명 설정
+            first_header = table.iloc[0].fillna('').astype(str)
+            second_header = table.iloc[1].fillna('').astype(str)
+            
+            # 테이블 제목 식별하기
+            title_text = None
+            title_col_idx = None
+            
+            # 사례수 다음에 나오는 테이블 제목 찾기
+            for idx, val in enumerate(first_header):
+                if idx > 2 and isinstance(val, str) and len(val) > 0:  # 대분류, 소분류, 사례수 이후
+                    # 이 값이 테이블 제목인지 확인 (다른 컬럼에는 없고 이 컬럼에만 있는 텍스트)
+                    if val not in ['관심없다', '보통', '관심있다', '평균']:
+                        title_text = val
+                        title_col_idx = idx
+                        break
+            
+            # 새로운 컬럼명 생성
+            new_columns = []
+            
+            for idx in range(len(first_header)):
+                if idx == 0:
+                    new_columns.append("대분류")
+                elif idx == 1:
+                    new_columns.append("소분류")
+                elif idx == 2:
+                    new_columns.append("사례수")
+                else:
+                    # 테이블 제목이 있는 경우 제거
+                    first_val = "" if (title_col_idx is not None and 
+                                      first_header.iloc[idx] == title_text) else first_header.iloc[idx]
+                    
+                    # 두 헤더 결합
+                    combined = (first_val + " " + second_header.iloc[idx]).strip()
+                    combined = combined.replace('nan', '').strip()
+                    
+                    new_columns.append(combined)
+            
             table = table.drop([0, 1]).reset_index(drop=True)
             table.columns = new_columns
-            table["대분류"] = table["대분류"].ffill()
 
+            # 불필요한 빈 컬럼/행 제거
             table = table.dropna(axis=1, how='all')
             table = table.dropna(axis=0, how='all')
 
-            table = table.drop(index=0).reset_index(drop=True)
+            # 대분류 채우기
+            table["대분류"] = table["대분류"].ffill()
+
+            # 마지막 요약행 (예: 합계 등) 제거
             if len(table) > 2:
                 table = table.iloc[:-2].reset_index(drop=True)
 
-            # ✅ 소수점 첫째 자리까지 반올림 (숫자형으로 변환 후 처리)
+            # 숫자 컬럼 반올림
             for col in table.columns:
                 try:
                     numeric_col = pd.to_numeric(table[col], errors='coerce')

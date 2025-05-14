@@ -1,80 +1,155 @@
 import pandas as pd
 import streamlit as st
-
 from langchain_core.runnables import RunnableLambda
+from scipy.stats import f_oneway
 
-def analyze_column_variation(df: pd.DataFrame, range_threshold=5.0, std_threshold=3.0):
-    numeric_cols = df.select_dtypes(include=["number"]).columns
+# -------------------------------
+# 🎯 테이블 타입 분류 함수
+# -------------------------------
+def classify_table_type(df: pd.DataFrame):
+    if any(col in df.columns for col in ["평균(5점척도)", "평균(4점척도)"]):
+        return "anchor"
+    elif "소분류" not in df.columns or df["소분류"].isna().all():
+        return "simple"
+    else:
+        return "unknown"
+
+# -------------------------------
+# 🎯 분석 핸들러들
+# -------------------------------
+def anchor_table_analysis(df: pd.DataFrame):
+    anchor_col = None
+    if "평균(5점척도)" in df.columns:
+        anchor_col = "평균(5점척도)"
+    elif "평균(4점척도)" in df.columns:
+        anchor_col = "평균(4점척도)"
+    else:
+        raise ValueError("anchor column 없음")
+
+    # 전체 평균: 대분류가 '전체', '전 체'인 경우
+    overall_value = df.loc[
+        df["대분류"].astype(str).str.contains("전체|전 체|전", na=False), 
+        anchor_col
+    ].mean()
+
     results = {}
+    # 🎯 소분류 개수 2개 이상 대분류만 분석
+    valid_categories = (
+        df.dropna(subset=["대분류", "소분류"])
+          .groupby("대분류")["소분류"]
+          .nunique()
+          .loc[lambda x: x >= 2]
+          .index.tolist()
+    )
 
-    # ✅ 1️⃣ 전체 평균이 가장 높은 anchor column 찾기
-    col_means = df[numeric_cols].mean()
-    anchor_col = col_means.idxmax()
+    for category in valid_categories:
+        group_df = df[df["대분류"] == category].dropna(subset=["소분류"])
 
-    # ✅ 2️⃣ anchor_col을 중심으로 분석 진행
-    for category in df["대분류"].unique():
-        group_df = df[df["대분류"] == category]
-        if anchor_col not in group_df.columns:
-            continue
+        # 🎯 F-test 수행 조건
+        groups = [
+            vals[anchor_col].dropna().values
+            for _, vals in group_df.groupby("소분류")
+        ]
+        valid_groups = [g for g in groups if len(g) >= 2]
+        f_value, p_value, sig = None, None, "-"
 
-        group_result = {}
-        col_data = group_df[anchor_col]
-        if col_data.isnull().all():
-            continue
+        if len(valid_groups) >= 2:
+            try:
+                f_value, p_value = f_oneway(*valid_groups)
+            except:
+                f_value, p_value = None, None
 
-        max_val = round(col_data.max(), 2)
-        min_val = round(col_data.min(), 2)
-        std_val = round(col_data.std(), 2)
+        # 🎯 유의성 표시
+        if p_value is not None:
+            if p_value < 0.001:
+                sig = "***"
+            elif p_value < 0.01:
+                sig = "**"
+            elif p_value < 0.05:
+                sig = "*"
 
-        max_group = group_df.loc[col_data.idxmax(), "소분류"]
-        min_group = group_df.loc[col_data.idxmin(), "소분류"]
+        # 🎯 인사이트: 전체 평균 대비 소분류별 차이
+        insights = []
+        for _, row in group_df.iterrows():
+            subgroup = row["소분류"]
+            value = row[anchor_col]
+            if pd.isna(value):
+                continue
+            diff = round(value - overall_value, 2)
+            if abs(diff) >= 0.1:  # 의미 있는 차이만
+                trend = "높음" if diff > 0 else "낮음"
+                insights.append({
+                    "소분류": subgroup,
+                    "값": value,
+                    "차이": diff,
+                    "트렌드": trend
+                })
 
-        # ✅ 3️⃣ threshold 기반 filtering
-        if (max_val - min_val) >= range_threshold or std_val >= std_threshold:
-            group_result[anchor_col] = {
-                "max_group": str(max_group),
-                "min_group": str(min_group),
-                "range": round(max_val - min_val, 2),
-                "std": std_val
+        if insights:
+            results[category] = {
+                "f_value": round(f_value, 3) if f_value else None,
+                "p_value": round(p_value, 4) if p_value else None,
+                "sig": sig,
+                "insights": insights
             }
 
-        if group_result:
-            results[category.strip()] = group_result
+    return format_anchor_analysis(results, anchor_col, overall_value)
 
-    return results, anchor_col
+def simple_table_analysis(df: pd.DataFrame):
+    lines = ["✅ 간단 Table 분석 결과입니다.\n"]
+    numeric_cols = df.select_dtypes(include=["number"]).columns
+    for col in numeric_cols:
+        lines.append(f"- **{col}**: 평균={df[col].mean():.2f}, 표준편차={df[col].std():.2f}")
+    return "\n".join(lines)
 
-def format_anchor_analysis(insightful_data: dict, anchor_col: str) -> str:
-    summary_sentences = []
-    summary_sentences.append(f"✅ 전체 데이터에서 가장 비중이 높은 분석 anchor column은 **'{anchor_col}'** 입니다.\n")
+def unknown_table_analysis(df: pd.DataFrame):
+    return "❌ 테이블 유형을 판단할 수 없어 분석을 건너뜁니다."
 
-    for category, stats in insightful_data.items():
-        summary_sentences.append(f"### [{category}]")
-        for col, detail in stats.items():
-            max_group = detail["max_group"]
-            min_group = detail["min_group"]
-            range_val = detail["range"]
-            std_val = detail["std"]
-            sentence = (
-                f"- '{col}' 항목은 '{max_group}' 그룹에서 가장 높고, "
-                f"'{min_group}' 그룹에서 가장 낮았음. "
-                f"(Range={range_val}, Std={std_val})"
+# -------------------------------
+# 🎯 공통 결과 포맷 함수
+# -------------------------------
+def format_anchor_analysis(results, anchor_col, overall_value):
+    lines = [f"✅ 전체 '{anchor_col}' 평균값은 **{overall_value}** 입니다.\n"]
+    for category, data in results.items():
+        f_val = data["f_value"]
+        p_val = data["p_value"]
+        sig = data["sig"]
+        lines.append(f"### [{category}] (F={f_val}, p={p_val}, {sig})")
+        for item in data["insights"]:
+            lines.append(
+                f"- '{item['소분류']}' 그룹의 '{anchor_col}' 값은 {item['값']}로 "
+                f"전체 평균 대비 **{item['트렌드']}** (차이 {item['차이']})"
             )
-            summary_sentences.append(sentence)
-        summary_sentences.append("")
-    return "\n".join(summary_sentences)
+        lines.append("")
+    return "\n\n".join(lines)
 
+# -------------------------------
+# 🎯 Dispatcher dictionary
+# -------------------------------
+analysis_handlers = {
+    "anchor": anchor_table_analysis,
+    "simple": simple_table_analysis,
+    "unknown": unknown_table_analysis
+}
+
+# -------------------------------
+# 🎯 Streamlit node
+# -------------------------------
 def streamlit_numeric_analysis_node_fn(state):
     st.info("✅ [Numeric Analysis Agent] Start table numeric analysis")
-    selected_table = state["selected_table"]
+    df = state["selected_table"]
 
     with st.spinner("표 데이터 분석 중..."):
-        insights, anchor_col = analyze_column_variation(selected_table)
-        numeric_analysis_text = format_anchor_analysis(insights, anchor_col)
+        try:
+            table_type = classify_table_type(df)
+            handler = analysis_handlers.get(table_type, unknown_table_analysis)
+            result = handler(df)
+        except Exception as e:
+            result = f"❌ 분석 실패: {str(e)}"
 
-    # ✅ Streamlit 출력
     st.markdown("### 📊 Numeric Analysis 결과")
-    st.markdown(numeric_analysis_text)
+    st.markdown(result)
 
-    return {**state, "numeric_anaylsis": numeric_analysis_text}
+    return {**state, "numeric_anaylsis": result}
 
 streamlit_numeric_analysis_node = RunnableLambda(streamlit_numeric_analysis_node_fn)

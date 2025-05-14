@@ -1,3 +1,5 @@
+# streamlit_table_analysis_agent.py
+
 import streamlit as st
 from langchain_openai import ChatOpenAI
 from langchain_core.runnables import RunnableLambda
@@ -40,11 +42,12 @@ Let's think step by step
 
 def streamlit_table_anaylsis_node_fn(state):
     st.info("✅ [Table Analysis Agent] Start table analyzing")
+
     linearized_table = state["linearized_table"]
     numeric_anaylsis = state["numeric_anaylsis"]
     selected_question = state["selected_question"]
 
-    # ✅ 개선 핵심: anchor column을 numeric_anaylsis에서 추출
+    # ✅ anchor column 추출
     first_line = numeric_anaylsis.split("\n")[0]
     if "anchor column은" in first_line:
         anchor_column = first_line.split("**'")[1].split("'**")[0]
@@ -62,8 +65,20 @@ def streamlit_table_anaylsis_node_fn(state):
         response = llm.invoke(prompt)
         table_analysis = response.content.strip()
 
+    # ✅ Custom 스타일 적용
+    st.markdown("""
+        <style>
+        .big-text {
+            font-size: 17px !important;
+            line-height: 1.7;
+            max-width: 1200px;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
+    # ✅ Table Analysis 출력
     st.markdown("### 📋 Table Analysis 요약 결과")
-    st.markdown(table_analysis)
+    st.markdown(f"<div class='big-text'>{table_analysis}</div>", unsafe_allow_html=True)
 
     return {**state, "table_analysis": table_analysis}
 
