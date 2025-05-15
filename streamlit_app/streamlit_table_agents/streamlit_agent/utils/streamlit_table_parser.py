@@ -86,6 +86,9 @@ def load_survey_tables(file_path: str, sheet_name: str = "통계표"):
             # 대분류 채우기
             table["대분류"] = table["대분류"].ffill()
 
+            # ✅ 대분류, 사례수 모두 NaN인 row 삭제 추가
+            table = table.dropna(subset=["대분류", "사례수"], how="all").reset_index(drop=True)
+
             # 마지막 요약행 (예: 합계 등) 제거
             if len(table) > 2:
                 table = table.iloc[:-1].reset_index(drop=True)
@@ -112,10 +115,21 @@ def table_parser_node_fn(state):
     analysis_type = state.get("analysis_type", True)
     uploaded_file = state.get("uploaded_file", None)
     selected_key = state.get("selected_key", None)   # ✅ app.py에서 넘긴 selected_key 사용
+    raw_data_file = state.get("raw_data_file", None)
 
     if uploaded_file is None:
-        st.warning("⚠️ 파일이 업로드되지 않았습니다. 파일을 먼저 업로드하세요.")
+        st.warning("⚠️ 통계표 엑셀 파일이 업로드되지 않았습니다. 파일을 먼저 업로드하세요.")
         st.stop()
+
+    if raw_data_file is None:
+        st.warning("⚠️ 원시 데이터 (Raw Data) 엑셀 파일이 업로드되지 않았습니다. 파일을 먼저 업로드하세요.")
+        st.stop()
+    
+    data = {}
+    data["raw_data"] = pd.read_excel(raw_data_file, sheet_name="DATA", header=0)
+    data["raw_variables"] = pd.read_excel(raw_data_file, sheet_name="변수", header=0)
+    data["raw_code_guide"] = pd.read_excel(raw_data_file, sheet_name="코딩가이드", header=1)
+    data["raw_question"] = pd.read_excel(raw_data_file, sheet_name="문항", header=0)
 
     tables, question_texts, question_keys = load_survey_tables(uploaded_file)
 
@@ -143,10 +157,13 @@ def table_parser_node_fn(state):
 
     return {
         **state,
+        "raw_data": data["raw_data"],
+        "raw_variables": data["raw_variables"],
+        "raw_code_guide": data["raw_code_guide"],
+        "raw_question": data["raw_question"],
         "tables": tables,
         "question_texts": question_texts,
         "selected_table": selected_table,
-        "table": tables,
         "selected_question": selected_question,
         "question_keys": question_keys,
         "selected_key": selected_key,

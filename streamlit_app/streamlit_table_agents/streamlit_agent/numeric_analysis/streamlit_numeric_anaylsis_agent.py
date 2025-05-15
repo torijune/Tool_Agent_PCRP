@@ -1,11 +1,10 @@
 import pandas as pd
+import numpy as np
 import streamlit as st
 from langchain_core.runnables import RunnableLambda
-from scipy.stats import f_oneway
+from scipy.stats import f_oneway, ttest_ind
 
-# -------------------------------
-# 🎯 테이블 타입 분류 함수
-# -------------------------------
+# ✅ Table type 분류
 def classify_table_type(df: pd.DataFrame):
     if any(col in df.columns for col in ["평균(5점척도)", "평균(4점척도)"]):
         return "anchor"
@@ -14,26 +13,15 @@ def classify_table_type(df: pd.DataFrame):
     else:
         return "unknown"
 
-# -------------------------------
-# 🎯 분석 핸들러들
-# -------------------------------
+# ✅ Anchor table 분석
 def anchor_table_analysis(df: pd.DataFrame):
-    anchor_col = None
-    if "평균(5점척도)" in df.columns:
-        anchor_col = "평균(5점척도)"
-    elif "평균(4점척도)" in df.columns:
-        anchor_col = "평균(4점척도)"
-    else:
-        raise ValueError("anchor column 없음")
-
-    # 전체 평균: 대분류가 '전체', '전 체'인 경우
+    anchor_col = "평균(5점척도)" if "평균(5점척도)" in df.columns else "평균(4점척도)"
     overall_value = df.loc[
         df["대분류"].astype(str).str.contains("전체|전 체|전", na=False), 
         anchor_col
     ].mean()
 
     results = {}
-    # 🎯 소분류 개수 2개 이상 대분류만 분석
     valid_categories = (
         df.dropna(subset=["대분류", "소분류"])
           .groupby("대분류")["소분류"]
@@ -44,12 +32,7 @@ def anchor_table_analysis(df: pd.DataFrame):
 
     for category in valid_categories:
         group_df = df[df["대분류"] == category].dropna(subset=["소분류"])
-
-        # 🎯 F-test 수행 조건
-        groups = [
-            vals[anchor_col].dropna().values
-            for _, vals in group_df.groupby("소분류")
-        ]
+        groups = [vals[anchor_col].dropna().values for _, vals in group_df.groupby("소분류")]
         valid_groups = [g for g in groups if len(g) >= 2]
         f_value, p_value, sig = None, None, "-"
 
@@ -57,9 +40,8 @@ def anchor_table_analysis(df: pd.DataFrame):
             try:
                 f_value, p_value = f_oneway(*valid_groups)
             except:
-                f_value, p_value = None, None
+                pass
 
-        # 🎯 유의성 표시
         if p_value is not None:
             if p_value < 0.001:
                 sig = "***"
@@ -68,7 +50,6 @@ def anchor_table_analysis(df: pd.DataFrame):
             elif p_value < 0.05:
                 sig = "*"
 
-        # 🎯 인사이트: 전체 평균 대비 소분류별 차이
         insights = []
         for _, row in group_df.iterrows():
             subgroup = row["소분류"]
@@ -76,7 +57,7 @@ def anchor_table_analysis(df: pd.DataFrame):
             if pd.isna(value):
                 continue
             diff = round(value - overall_value, 2)
-            if abs(diff) >= 0.1:  # 의미 있는 차이만
+            if abs(diff) >= 0.1:
                 trend = "높음" if diff > 0 else "낮음"
                 insights.append({
                     "소분류": subgroup,
@@ -95,6 +76,7 @@ def anchor_table_analysis(df: pd.DataFrame):
 
     return format_anchor_analysis(results, anchor_col, overall_value)
 
+# ✅ Simple table 분석
 def simple_table_analysis(df: pd.DataFrame):
     lines = ["✅ 간단 Table 분석 결과입니다.\n"]
     numeric_cols = df.select_dtypes(include=["number"]).columns
@@ -105,16 +87,11 @@ def simple_table_analysis(df: pd.DataFrame):
 def unknown_table_analysis(df: pd.DataFrame):
     return "❌ 테이블 유형을 판단할 수 없어 분석을 건너뜁니다."
 
-# -------------------------------
-# 🎯 공통 결과 포맷 함수
-# -------------------------------
+# ✅ Formatting 함수
 def format_anchor_analysis(results, anchor_col, overall_value):
     lines = [f"✅ 전체 '{anchor_col}' 평균값은 **{overall_value}** 입니다.\n"]
     for category, data in results.items():
-        f_val = data["f_value"]
-        p_val = data["p_value"]
-        sig = data["sig"]
-        lines.append(f"### [{category}] (F={f_val}, p={p_val}, {sig})")
+        lines.append(f"### [{category}] (F={data['f_value']}, p={data['p_value']}, {data['sig']})")
         for item in data["insights"]:
             lines.append(
                 f"- '{item['소분류']}' 그룹의 '{anchor_col}' 값은 {item['값']}로 "
@@ -123,33 +100,86 @@ def format_anchor_analysis(results, anchor_col, overall_value):
         lines.append("")
     return "\n\n".join(lines)
 
-# -------------------------------
-# 🎯 Dispatcher dictionary
-# -------------------------------
+# ✅ F/T test helper
+def assign_significance_stars(p):
+    if p < 0.001:
+        return "***"
+    elif p < 0.01:
+        return "**"
+    elif p < 0.05:
+        return "*"
+    else:
+        return "-"
+
+def test_question_by_strata(df, strata_col, question_col):
+    groups = df.groupby(strata_col)[question_col].apply(list)
+
+    if len(groups) == 2:
+        stat, p = ttest_ind(groups.iloc[0], groups.iloc[1], nan_policy='omit')
+        method = "T-test"
+    elif len(groups) >= 3:
+        stat, p = f_oneway(*groups)
+        method = "F-test (ANOVA)"
+    else:
+        return None
+
+    return {
+        "method": method,
+        "statistic": stat,
+        "p_value": p,
+        "stars": assign_significance_stars(p)
+    }
+
+# ✅ 분석 handler 등록
 analysis_handlers = {
     "anchor": anchor_table_analysis,
     "simple": simple_table_analysis,
     "unknown": unknown_table_analysis
 }
 
-# -------------------------------
-# 🎯 Streamlit node
-# -------------------------------
+# ✅ streamlit 노드 함수 (최종 통합)
 def streamlit_numeric_analysis_node_fn(state):
     st.info("✅ [Numeric Analysis Agent] Start table numeric analysis")
-    df = state["selected_table"]
 
-    with st.spinner("표 데이터 분석 중..."):
-        try:
-            table_type = classify_table_type(df)
-            handler = analysis_handlers.get(table_type, unknown_table_analysis)
-            result = handler(df)
-        except Exception as e:
-            result = f"❌ 분석 실패: {str(e)}"
+    selected_table = state["selected_table"]
+    raw_data_mapped = state.get("raw_data_mapped", None)
+    selected_key = state["selected_key"]
 
-    st.markdown("### 📊 Numeric Analysis 결과")
-    st.markdown(result)
+    # ✅ 기존 anchor/simple 분석
+    table_type = classify_table_type(selected_table)
+    analysis_fn = analysis_handlers.get(table_type, unknown_table_analysis)
+    basic_analysis = analysis_fn(selected_table)
 
-    return {**state, "numeric_anaylsis": result}
+    # ✅ ✅ ✅ streamlit 화면에 numeric analysis 출력
+    st.subheader("📊 기본 Numeric Analysis 결과")
+    st.markdown(basic_analysis)
 
+    # ✅ 추가 F/T 분석
+    ft_test_result = {}
+    if raw_data_mapped is not None and selected_key in raw_data_mapped.columns:
+        major_categories = selected_table["대분류"].dropna().unique()
+
+        for major in major_categories:
+            if major not in raw_data_mapped.columns:
+                continue
+            try:
+                result = test_question_by_strata(raw_data_mapped, major, selected_key)
+                if result:
+                    result_str = (
+                        f"[F/T 검정] {major} 기준: {result['method']} "
+                        f"(F/T={abs(result['statistic']):.3f}, p={result['p_value']:.4f}) → {result['stars']}"
+                    )
+                    ft_test_result[major] = result_str
+            except Exception as e:
+                ft_test_result[major] = f"- [Error] {major} 검정 실패: {str(e)}"
+
+    # ✅ ✅ ✅ streamlit 화면에 F/T 분석 결과 출력
+    if ft_test_result:
+        st.subheader("🎯 추가 F/T 검정 결과")
+        for key, result in ft_test_result.items():
+            st.markdown(f"- {key}: {result}")
+
+    return {**state, "numeric_anaylsis": basic_analysis, "ft_test_result": ft_test_result}
+
+# ✅ 노드 생성
 streamlit_numeric_analysis_node = RunnableLambda(streamlit_numeric_analysis_node_fn)
