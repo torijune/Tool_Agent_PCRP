@@ -6,11 +6,13 @@ from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain_core.runnables import RunnableLambda
 
+# ✅ 환경 설정
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.3)
 
+# ✅ 수정 프롬프트 (ft_test_summary 사용)
 REVISION_PROMPT = """
 당신은 통계 데이터를 바탕으로 인구집단 간 패턴과 경향성을 객관적으로 요약하는 데이터 분석 전문가입니다.
 
@@ -22,8 +24,8 @@ REVISION_PROMPT = """
 📊 표 데이터 (선형화된 형태):
 {linearized_table}
 
-📈 수치 분석 결과 (대분류별 항목별 최고/최저 값, 표준편차, 범위 등):
-{numeric_anaylsis}
+📈 수치 분석 결과 (F/T-test 결과 요약):
+{ft_test_summary}
 
 💡 사전에 생성된 가설 (참고용):
 {generated_hypotheses}
@@ -63,13 +65,14 @@ Let's think step by step
 대기환경 문제 관심 정도, 연령대 높을수록 더 높은 경향 보였음. 기저질환 있는 그룹, 대기오염 배출사업장 주변 거주 그룹, 실외 체류시간 많은 그룹도 상대적으로 높은 관심 보였음.
 """
 
+# ✅ LangGraph 노드 함수
 def streamlit_revise_table_analysis_fn(state):
     st.info("✅ [Revision Agent] Start table analysis revision")
 
     prompt = REVISION_PROMPT.format(
         selected_question=state["selected_question"],
         linearized_table=state["linearized_table"],
-        numeric_anaylsis=state["numeric_anaylsis"],
+        ft_test_summary=str(state["ft_test_summary"]),  # ✅ 수정된 부분
         table_analysis=state["table_analysis"] if state["hallucination_reject_num"] == 0 else state["revised_analysis"],
         feedback=state["feedback"],
         generated_hypotheses=state.get("generated_hypotheses", "해당 없음")
@@ -88,4 +91,5 @@ def streamlit_revise_table_analysis_fn(state):
         "revised_analysis": revised_analysis
     }
 
+# ✅ LangGraph 노드 등록
 streamlit_revise_table_analysis_node = RunnableLambda(streamlit_revise_table_analysis_fn)
