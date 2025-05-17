@@ -1,13 +1,12 @@
 import pandas as pd
 import re
 from collections import defaultdict
-
 import streamlit as st
 from langchain_core.runnables import RunnableLambda
 
-import pandas as pd
-from collections import defaultdict
-import re
+# ✅ 정규화 함수
+def normalize_key(key: str) -> str:
+    return key.replace("-", "_").replace(".", "_")
 
 def load_survey_tables(file_path: str, sheet_name: str = "통계표"):
     df = pd.read_excel(file_path, sheet_name=sheet_name, header=None)
@@ -31,33 +30,27 @@ def load_survey_tables(file_path: str, sheet_name: str = "통계표"):
         key_counts[base_key] += 1
         suffix = f"_{key_counts[base_key]}" if key_counts[base_key] > 1 else ""
         final_key = base_key + suffix
+        final_key_norm = normalize_key(final_key)
 
-        question_texts[final_key] = title + "(전체 단위 : %)"
-        question_keys.append(final_key)
+        question_texts[final_key_norm] = title + "(전체 단위 : %)"
+        question_keys.append(final_key_norm)
 
         table = df.iloc[start + 1:end].reset_index(drop=True)
 
         if len(table) >= 2:
-            # 테이블 제목 제거 및 컬럼명 설정
             first_header = table.iloc[0].fillna('').astype(str)
             second_header = table.iloc[1].fillna('').astype(str)
-            
-            # 테이블 제목 식별하기
+
             title_text = None
             title_col_idx = None
-            
-            # 사례수 다음에 나오는 테이블 제목 찾기
             for idx, val in enumerate(first_header):
-                if idx > 2 and isinstance(val, str) and len(val) > 0:  # 대분류, 소분류, 사례수 이후
-                    # 이 값이 테이블 제목인지 확인 (다른 컬럼에는 없고 이 컬럼에만 있는 텍스트)
+                if idx > 2 and isinstance(val, str) and len(val) > 0:
                     if val not in ['관심없다', '보통', '관심있다', '평균']:
                         title_text = val
                         title_col_idx = idx
                         break
-            
-            # 새로운 컬럼명 생성
+
             new_columns = []
-            
             for idx in range(len(first_header)):
                 if idx == 0:
                     new_columns.append("대분류")
@@ -66,34 +59,19 @@ def load_survey_tables(file_path: str, sheet_name: str = "통계표"):
                 elif idx == 2:
                     new_columns.append("사례수")
                 else:
-                    # 테이블 제목이 있는 경우 제거
-                    first_val = "" if (title_col_idx is not None and 
-                                      first_header.iloc[idx] == title_text) else first_header.iloc[idx]
-                    
-                    # 두 헤더 결합
-                    combined = (first_val + " " + second_header.iloc[idx]).strip()
-                    combined = combined.replace('nan', '').strip()
-                    
+                    first_val = "" if (title_col_idx is not None and first_header.iloc[idx] == title_text) else first_header.iloc[idx]
+                    combined = (first_val + " " + second_header.iloc[idx]).strip().replace('nan', '').strip()
                     new_columns.append(combined)
-            
+
             table = table.drop([0, 1]).reset_index(drop=True)
             table.columns = new_columns
-
-            # 불필요한 빈 컬럼/행 제거
             table = table.dropna(axis=1, how='all')
             table = table.dropna(axis=0, how='all')
-
-            # 대분류 채우기
             table["대분류"] = table["대분류"].ffill()
-
-            # ✅ 대분류, 사례수 모두 NaN인 row 삭제 추가
             table = table.dropna(subset=["대분류", "사례수"], how="all").reset_index(drop=True)
-
-            # 마지막 요약행 (예: 합계 등) 제거
             if len(table) > 2:
                 table = table.iloc[:-1].reset_index(drop=True)
 
-            # 숫자 컬럼 반올림
             for col in table.columns:
                 try:
                     numeric_col = pd.to_numeric(table[col], errors='coerce')
@@ -102,7 +80,7 @@ def load_survey_tables(file_path: str, sheet_name: str = "통계표"):
                 except:
                     continue
 
-            tables[final_key] = table
+            tables[final_key_norm] = table
 
     return tables, question_texts, question_keys
 
@@ -114,7 +92,7 @@ def linearize_row_wise(df):
 def table_parser_node_fn(state):
     analysis_type = state.get("analysis_type", True)
     uploaded_file = state.get("uploaded_file", None)
-    selected_key = state.get("selected_key", None)   # ✅ app.py에서 넘긴 selected_key 사용
+    selected_key = state.get("selected_key", None)
 
     if uploaded_file is None:
         st.warning("⚠️ 통계표 엑셀 파일이 업로드되지 않았습니다. 파일을 먼저 업로드하세요.")
@@ -122,12 +100,14 @@ def table_parser_node_fn(state):
 
     tables, question_texts, question_keys = load_survey_tables(uploaded_file)
 
-    # ✅ selected_key가 state에 있다면 그대로 사용
     if selected_key is not None:
-        selected_table = tables[selected_key]
-        selected_question = question_texts[selected_key]
+        norm_key = normalize_key(selected_key)
+        if norm_key not in tables:
+            st.error(f"❌ 선택된 질문 키 '{selected_key}' 에 해당하는 테이블이 존재하지 않습니다.")
+            st.stop()
+        selected_table = tables[norm_key]
+        selected_question = question_texts[norm_key]
 
-    # ✅ 단일 선택 모드 (streamlit에서 선택 → 비권장, 호환용)
     elif analysis_type:
         options = [f"[{key}] {question_texts[key]}" for key in question_keys]
         selected_option = st.selectbox("📝 질문 목록", options)
@@ -136,7 +116,6 @@ def table_parser_node_fn(state):
         selected_table = tables[selected_key]
         selected_question = question_texts[selected_key]
 
-    # ✅ batch 모드 → 전체 파일에서 첫 번째 테이블로 설정
     else:
         selected_key = question_keys[0]
         selected_table = tables[selected_key]

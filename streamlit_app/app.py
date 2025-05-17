@@ -2,6 +2,9 @@ import streamlit as st
 from streamlit_table_agents.table_graph.streamlit_table_workflow_graph import build_table_graph
 from streamlit_table_agents.streamlit_agent.utils.streamlit_table_parser import load_survey_tables
 
+from dotenv import load_dotenv
+load_dotenv()
+
 def main():
     st.set_page_config(page_title="Table Analysis Agent", layout="wide")
     st.title("📊 Table Analysis Multi-Agent Demo")
