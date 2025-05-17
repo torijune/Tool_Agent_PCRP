@@ -10,9 +10,10 @@ from langchain_core.runnables import RunnableLambda
 from dotenv import load_dotenv
 load_dotenv()
 
+load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
 
-llm = ChatOpenAI(model="gpt-4o", temperature=0.3)
+llm = ChatOpenAI(model="gpt-4o", temperature=0.3, openai_api_key=api_key)
 
 TABLE_ANALYSIS_PROMPT = """
 당신은 통계 데이터를 바탕으로 인구집단 간 유의미한 차이를 중심으로 경향을 분석하고 요약하는 데이터 분석 전문가입니다.
