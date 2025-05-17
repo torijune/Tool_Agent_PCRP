@@ -1,0 +1,14 @@
+langgraph
+langchain_core
+langchain
+langchain_community
+langchain_openai
+bs4
+faiss-cpu
+pandas
+openpyxl
+xlrd
+pandas
+scipy
+openai
+python-dotenv
