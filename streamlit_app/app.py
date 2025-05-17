@@ -12,8 +12,8 @@ try:
     from dotenv import load_dotenv
     # Try importing your custom modules with error handling
     try:
-        from streamlit_table_agents.table_graph.streamlit_table_workflow_graph import build_table_graph
-        from streamlit_table_agents.streamlit_agent.utils.streamlit_table_parser import load_survey_tables
+        from streamlit_table_workflow_graph import build_table_graph
+        from streamlit_table_parser import load_survey_tables
     except ImportError as e:
         st.error(f"❌ Failed to import required modules: {e}")
         logger.error(f"Import error: {e}")
