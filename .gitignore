@@ -5,3 +5,4 @@ __pycache__/
 Notebook/
 agents/abstract_agents/data/
 agents/table_agents/table_list/
+streamlit_app/.streamlit/secrets.toml
