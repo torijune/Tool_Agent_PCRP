@@ -10,3 +10,5 @@ openpyxl
 xlrd
 pandas
 scipy
+openai
+python-dotenv
