@@ -8,7 +8,7 @@ from langchain_core.runnables import RunnableLambda
 
 # ✅ 환경 변수 로드 및 API 키 설정
 load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
+api_key = os.getenv("OPENAI_API_KEY")
 
 # ✅ LLM 설정
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.5)

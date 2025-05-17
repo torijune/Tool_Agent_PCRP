@@ -1,5 +1,3 @@
-# streamlit_table_analysis_agent.py
-
 import streamlit as st
 import pandas as pd
 import os
