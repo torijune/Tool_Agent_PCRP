@@ -52,6 +52,9 @@ def main():
         st.set_page_config(page_title="Table Analysis Agent", layout="wide")
         st.title("📊 Table Analysis Multi-Agent Demo")
 
+        st.markdown("⚠️ **업로드할 파일 이름은 반드시 영문 또는 숫자로 구성되어야 합니다.**")
+        st.markdown("한글, 공백, 특수문자가 포함된 경우 업로드가 실패할 수 있습니다. 예: `data_2024.xlsx` ✅")
+
         st.markdown("""
         - Excel 통계표 기반 분석 자동화
         - Upload File → Parsing → Hypothesis → Numeric Analysis → Table Analysis → Hallucination Check → Revision → Polishing
