@@ -1,0 +1,4 @@
+[server]
+enableXsrfProtection = false
+enableCORS = false
+[출처] Streamlit 파일업로드시 에러 :  AxiosError: Request failed with status code 403|작성자 데이터공방
