@@ -183,9 +183,6 @@ def main():
             else:
                 st.warning("⚠️ 최종 결과가 생성되지 않았습니다.")
                 logger.warning("No polishing_result in workflow output")
-
-            st.markdown("### 📝 전체 상태 보기")
-            st.json(result)
     except Exception as e:
         logger.error(f"Unhandled exception: {traceback.format_exc()}")
         st.error(f"❌ 예상치 못한 오류가 발생했습니다: {str(e)}")

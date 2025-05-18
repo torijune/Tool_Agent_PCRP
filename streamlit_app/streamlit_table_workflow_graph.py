@@ -2,6 +2,7 @@ from h11 import Data
 from langgraph.graph import StateGraph, END
 from typing import Annotated, TypedDict, IO, Dict
 from langchain_core.runnables import Runnable
+from langgraph.graph.message import add_messages
 from pandas import DataFrame
 
 from streamlit_table_analysis_agent import streamlit_table_anaylsis_node
@@ -12,6 +13,7 @@ from streamlit_polish_agent import streamlit_sentence_polish_node
 from streamlit_hypothesis_generation import streamlit_hypothesis_generate_node
 from FT_Star_analysis import streamlit_ft_star_analysis_node
 from streamlit_decision_test_type import streamlit_test_type_decision_node
+from get_anchor import get_anchor_node
 
 class AgentState(TypedDict):
     query: Annotated[str,"User input query"]
@@ -23,12 +25,14 @@ class AgentState(TypedDict):
     selected_table: Annotated[DataFrame, "Selected Table formatted pandas DataFrame"]
     selected_key: Annotated[str, "Selected table key for manual selection"]
 
+    anchor: Annotated[list[str], "Anchor column names extracted from selected_table"]
+
     linearized_table: Annotated[str, "Linearized table sentences"]
 
     numeric_anaylsis: Annotated[str, "Numeric analysis results"]
 
     table_analysis: Annotated[str, "Final table analysis result"]
-    revised_analysis: Annotated[str, "Revised analysis by revision LLM"]
+    revised_analysis: Annotated[str, add_messages]
 
     hallucination_check: Annotated[str, "table_analysis hallucination_check"]
     hallucination_reject_num: Annotated[int, "Number of hallucination rejections"]
@@ -62,6 +66,7 @@ def build_table_graph() -> Runnable:
     builder.add_node("sentence_polish_node", streamlit_sentence_polish_node)
     builder.add_node("FT_anlysis_node", streamlit_ft_star_analysis_node)
     builder.add_node("test_decision_node", streamlit_test_type_decision_node)
+    builder.add_node("get_anchor_node", get_anchor_node)
 
     # ✅ Entry Point
     builder.set_entry_point("table_parser")
@@ -70,7 +75,8 @@ def build_table_graph() -> Runnable:
     builder.add_edge("table_parser", "hypothesis_generate_node")
     builder.add_edge("hypothesis_generate_node", "test_decision_node")
     builder.add_edge("test_decision_node", "FT_anlysis_node")
-    builder.add_edge("FT_anlysis_node", "table_analyzer")
+    builder.add_edge("FT_anlysis_node", "get_anchor_node")
+    builder.add_edge("get_anchor_node", "table_analyzer")
     builder.add_edge("table_analyzer", "hallucination_check_node")
 
     def route_hallucination(state):

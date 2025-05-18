@@ -1,4 +1,3 @@
-# FT_Star_analysis.py
 from langchain_core.runnables import RunnableLambda
 import pandas as pd
 import scipy.stats as stats
@@ -48,7 +47,10 @@ def summarize_ft_test(result_df: pd.DataFrame) -> str:
 
     if not significant.empty:
         sig_items = significant["대분류"].tolist()
-        summary.append(f"{', '.join(sig_items)}는 통계적으로 유의한 차이를 보였음.")
+        if len(sig_items) == len(result_df):
+            summary.append("모든 항목에서 통계적으로 유의미한 차이가 관찰되었음. 대분류 전반에 걸쳐 의미 있는 차이가 존재함.")
+        else:
+            summary.append(f"{', '.join(sig_items)}는 통계적으로 유의한 차이를 보였음.")
     else:
         # 유의한 항목이 전혀 없을 경우 → p-value 기준 상위 3개 언급
         if not result_df.empty:

@@ -53,9 +53,9 @@ def streamlit_sentence_polish_fn(state):
 
     polishing_result = response.content.strip()
 
-    st.markdown("### ✅ Final Report")
+    st.text("### ✅ Final Report")
     st.success("🎉 다듬어진 최종 요약문:")
-    st.markdown(polishing_result)
+    st.text(polishing_result)
 
     return {**state, "polishing_result": polishing_result}
 
