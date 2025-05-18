@@ -11,7 +11,8 @@ api_key = os.getenv("OPENAI_API_KEY")
 
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.3, openai_api_key=api_key)
 
-POLISHING_PROMPT = """
+POLISHING_PROMPT = {
+    "한국어": """
 당신은 통계 데이터를 바탕으로 작성된 한국어 보고서를 다듬는 문체 전문 에디터입니다.
 
 아래는 통계 분석 결과를 요약한 초안입니다.  
@@ -39,22 +40,53 @@ POLISHING_PROMPT = """
 ---
 
 🎯 다듬어진 최종 요약문:
+""",
+    "English": """
+You are a stylistic editor for statistical summaries written in Korean.
+
+Below is a draft summary of a statistical analysis.  
+If the sentences are too choppy ("~했음. ~했음." repetition), redundant, or include subjective insights, rewrite them into a more readable style **without altering their meaning**.
+
+🎯 Strictly follow these instructions:
+
+1. **No additions or deletions** — Do not add new interpretations, background, or causal reasoning beyond the original numeric-based content.
+2. **Keep declarative tone** — Use styles like: "~was observed", "~was shown"
+3. **Remove speculative insights** — Phrases like “due to health concerns” or “because they were affected” must be removed; stick only to observable facts
+4. **Only include categories with statistical significance (asterisked)** in the report
+5. **Eliminate and connect duplicates** — Avoid repeating the same idea (e.g., “was high”, “interest was high”); connect with transitions
+6. **Avoid monotonous structure** — Don’t repeat "~was observed." repeatedly; vary structure and combine related findings into single sentences
+7. **Use varied expressions** — Mix in phrases like:
+   - Showed notable trend
+   - Displayed clear difference
+   - Exhibited relatively high values
+   - Recorded the highest
+8. **Avoid listing all subgroups** — Focus on concise summaries of characteristic groups
+9. **Only report table-based facts** — Do not include interpretations; describe numeric trends only
+
+📝 Original draft:
+{raw_summary}
+
+---
+
+🎯 Polished final summary:
 """
+}
 
 def streamlit_sentence_polish_fn(state):
-    st.info("✅ [Polish Agent] Start sentence polishing")
+    lang = state.get("lang", "한국어")
+    st.info("✅ [Polish Agent] 문장 다듬기 시작" if lang == "한국어" else "✅ [Polish Agent] Start sentence polishing")
 
     hallucination_reject_num = state["hallucination_reject_num"]
 
     raw_summary = state["table_analysis"] if hallucination_reject_num == 0 else state["revised_analysis"]
 
-    with st.spinner("LLM Polish Agent가 문장을 다듬는 중..."):
-        response = llm.invoke(POLISHING_PROMPT.format(raw_summary=raw_summary))
+    with st.spinner("LLM이 문장을 다듬는 중..." if lang == "한국어" else "LLM is polishing the summary..."):
+        response = llm.invoke(POLISHING_PROMPT[lang].format(raw_summary=raw_summary))
 
     polishing_result = response.content.strip()
 
-    st.text("### ✅ Final Report")
-    st.success("🎉 다듬어진 최종 요약문:")
+    st.text("### ✅ 최종 보고서" if lang == "한국어" else "### ✅ Final Report")
+    st.success("🎉 다듬어진 최종 요약문:" if lang == "한국어" else "🎉 Polished Final Summary:")
     st.text(polishing_result)
 
     return {**state, "polishing_result": polishing_result}

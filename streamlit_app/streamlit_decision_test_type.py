@@ -62,6 +62,7 @@ def normalize_test_type(llm_output: str) -> str:
         return "unknown"
 
 def streamlit_test_type_decision_fn(state):
+    lang = state.get("lang", "한국어")
     selected_table = state["selected_table"]
 
     IGNORE_COLUMNS = {"대분류", "소분류", "사례수", "row_name"}
@@ -73,15 +74,15 @@ def streamlit_test_type_decision_fn(state):
         column_names=column_names_str
     )
 
-    st.info("🤖 LLM에게 적절한 통계 검정 방식을 문의합니다...")
+    st.info("🤖 LLM에게 적절한 통계 검정 방식을 문의합니다..." if lang == "한국어" else "🤖 Asking the LLM to determine the appropriate statistical test...")
 
-    with st.spinner("LLM 판단 중..."):
+    with st.spinner("LLM 판단 중..." if lang == "한국어" else "Determining test type..."):
         response = llm.invoke(prompt)
 
     test_type = response.content.strip()
     test_type = normalize_test_type(test_type)
 
-    st.success(f"📌 LLM 결정: `{test_type}` 검정 방식 선택됨")
+    st.success(f"📌 LLM 결정: `{test_type}` 검정 방식 선택됨" if lang == "한국어" else f"📌 LLM decision: `{test_type}` test selected")
 
     return {
         **state,

@@ -396,6 +396,7 @@ def main():
                     "analysis_type": analysis_type_flag,
                     "uploaded_file": io.BytesIO(uploaded_file.read()),
                     "raw_data_file": raw_data_stream,
+                    "lang": lang
                 }
 
                 if analysis_type_flag and selected_question_key is not None:

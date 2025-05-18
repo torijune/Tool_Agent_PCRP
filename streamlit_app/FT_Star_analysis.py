@@ -38,7 +38,7 @@ def extract_demo_mapping_from_dataframe(df, column="Unnamed: 0"):
     return demo_dict
 
 # ✅ 자연어 요약 생성 함수
-def summarize_ft_test(result_df: pd.DataFrame) -> str:
+def summarize_ft_test(result_df: pd.DataFrame, lang: str = "한국어") -> str:
     # 유의성 있는 항목(별이 하나 이상 붙은 항목) 필터링
     significant = result_df[result_df["유의성"] != ""]
     non_significant = result_df[result_df["유의성"] == ""]
@@ -48,15 +48,15 @@ def summarize_ft_test(result_df: pd.DataFrame) -> str:
     if not significant.empty:
         sig_items = significant["대분류"].tolist()
         if len(sig_items) == len(result_df):
-            summary.append("모든 항목에서 통계적으로 유의미한 차이가 관찰되었음. 대분류 전반에 걸쳐 의미 있는 차이가 존재함.")
+            summary.append("모든 항목에서 통계적으로 유의미한 차이가 관찰되었음. 대분류 전반에 걸쳐 의미 있는 차이가 존재함." if lang == "한국어" else "All categories showed statistically significant differences. Broad variation was observed across major groups.")
         else:
-            summary.append(f"{', '.join(sig_items)}는 통계적으로 유의한 차이를 보였음.")
+            summary.append(f"{', '.join(sig_items)}는 통계적으로 유의한 차이를 보였음." if lang == "한국어" else f"{', '.join(sig_items)} showed statistically significant differences.")
     else:
         # 유의한 항목이 전혀 없을 경우 → p-value 기준 상위 3개 언급
         if not result_df.empty:
             top3 = result_df.nsmallest(3, "p-value")[["대분류", "p-value"]]
             top3_text = ", ".join(f"{row['대분류']} (p={row['p-value']})" for _, row in top3.iterrows())
-            summary.append(f"통계적으로 유의한 항목은 없었지만, 상대적으로 p-value가 낮은 항목은 {top3_text} 순이었음.")
+            summary.append(f"통계적으로 유의한 항목은 없었지만, 상대적으로 p-value가 낮은 항목은 {top3_text} 순이었음." if lang == "한국어" else f"No items reached statistical significance, but the ones with the lowest p-values were: {top3_text}.")
 
     return "  ".join(summary)
 
@@ -148,10 +148,11 @@ def ft_star_analysis_node_fn(state: dict) -> dict:
         raw_data_file = state["raw_data_file"]
         question_key = state["selected_key"]
         test_type = state["test_type"]
+        lang = state.get("lang", "한국어")
 
-        st.info(f"✅ [FT-Test Agent] {test_type} 분석을 시작합니다...")
+        st.info(f"✅ [FT-Test Agent] {test_type} 분석을 시작합니다..." if lang == "한국어" else f"✅ [FT-Test Agent] Starting {test_type} analysis...")
 
-        with st.spinner("🔍 F/T 분석 진행 중..."):
+        with st.spinner("🔍 F/T 분석 진행 중..." if lang == "한국어" else "🔍 Running F/T analysis..."):
 
             raw_data = pd.read_excel(raw_data_file, sheet_name="DATA")
             demo_df = pd.read_excel(raw_data_file, sheet_name="DEMO")
@@ -167,12 +168,12 @@ def ft_star_analysis_node_fn(state: dict) -> dict:
                                             demo_dict=demo_mapping)
 
             # ✅ Streamlit 출력
-            st.markdown("### ✅ F/T 검정 결과")
+            st.markdown("### ✅ F/T 검정 결과" if lang == "한국어" else "### ✅ F/T Test Results")
             st.dataframe(result_df)
 
             # ✅ 자연어 요약 출력
-            summary_text = summarize_ft_test(result_df)
-            st.markdown("### 📄 자연어 요약 결과")
+            summary_text = summarize_ft_test(result_df, lang=lang)
+            st.markdown("### 📄 자연어 요약 결과" if lang == "한국어" else "### 📄 Natural Language Summary")
             st.write(summary_text)
 
             print("✅ F/T 분석 완료")
@@ -186,7 +187,7 @@ def ft_star_analysis_node_fn(state: dict) -> dict:
 
     except Exception as e:
         print("❌ F/T 분석 중 오류:", e)
-        st.error(f"❌ 분석 중 오류 발생: {e}")
+        st.error(f"❌ 분석 중 오류 발생: {e}" if lang == "한국어" else f"❌ Error during analysis: {e}")
         return {**state, "ft_test_result": {}, "ft_error": str(e)}
 
 # ✅ LangGraph 노드 등록

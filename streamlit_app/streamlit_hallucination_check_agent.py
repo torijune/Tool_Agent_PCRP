@@ -13,7 +13,8 @@ api_key = os.getenv("OPENAI_API_KEY")
 # ✅ LLM 설정
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=1.0, top_p = 0.9, openai_api_key=api_key)
 
-HALLUCINATION_CHECK_PROMPT = """
+HALLUCINATION_CHECK_PROMPT = {
+    "한국어": """
 당신은 통계 해석 결과를 검증하는 전문가입니다.
 
 아래의 테이블 데이터와 수치 분석 결과(F/T-test 기반), 그리고 해당 결과를 바탕으로 작성된 요약 보고서가 주어집니다.
@@ -43,13 +44,45 @@ HALLUCINATION_CHECK_PROMPT = """
 - 위 항목 위반 시 "reject: [이유]" 형식으로 출력
 
 ※ F/T-test 결과는 중요한 기준이지만, 사소한 누락은 reject 대신 피드백으로 처리해도 됩니다. 명백한 왜곡이나 중대한 누락 시에만 reject 하세요.
+""",
+    "English": """
+You are a statistical analysis auditor.
+
+Below is a statistical summary table (linearized format), F/T-test results, and a summary report written based on them.
+
+📝 Survey question:
+{selected_question}
+
+📊 Linearized Table:
+{linearized_table}
+
+📈 Statistical Test Summary (F/T-test):
+{ft_test_summary}
+
+🧾 Generated Summary Report:
+{table_analysis}
+
+---
+
+Please evaluate whether the summary accurately and consistently reflects the statistical test results above.
+
+⚠️ Evaluation Guidelines (Provide feedback first. Only reject in cases of serious distortion):
+1. If a major category with statistically significant difference is missing in the summary
+2. If the key trends or directions are misinterpreted (e.g. stating it’s higher when it isn’t)
+
+🎯 Evaluation Instructions:
+- If the summary is overall reliable and reflects the results well, answer "accept"
+- If any violations occur, return: "reject: [reason]"
+
+※ F/T-test is a key basis, but minor omissions can be handled with feedback only. Use "reject" only for clear distortions or major omissions.
 """
+}
 
 # ✅ LangGraph-compatible hallucination 체크 노드
 def streamlit_hallucination_check_node_fn(state):
-    st.info("✅ [Hallucination Check Agent] Start hallucination evaluation")
-
     hallucination_reject_num = state.get("hallucination_reject_num", 0)
+    lang = state.get("lang", "한국어")
+    st.info("✅ [Hallucination Check Agent] 환각 평가 시작" if lang == "한국어" else "✅ [Hallucination Check Agent] Start hallucination evaluation")
 
     # 🔁 수정 여부에 따라 분석 결과 선택
     if "revised_analysis_history" in state and state["revised_analysis_history"]:
@@ -58,7 +91,7 @@ def streamlit_hallucination_check_node_fn(state):
         table_analysis = state["table_analysis"]
 
     # ✅ 프롬프트 생성
-    prompt = HALLUCINATION_CHECK_PROMPT.format(
+    prompt = HALLUCINATION_CHECK_PROMPT[lang].format(
         selected_question=state["selected_question"],
         linearized_table=state["linearized_table"],
         ft_test_summary=str(state["ft_test_summary"]),
@@ -66,7 +99,7 @@ def streamlit_hallucination_check_node_fn(state):
     )
 
     # ✅ LLM 호출
-    with st.spinner("Hallucination 평가 중..."):
+    with st.spinner("Hallucination 평가 중..." if lang == "한국어" else "Evaluating hallucination..."):
         response = llm.invoke(prompt)
 
     result = response.content.strip()
@@ -76,15 +109,15 @@ def streamlit_hallucination_check_node_fn(state):
         decision = "reject"
         feedback = result[len("reject"):].strip(": ").strip()
         hallucination_reject_num += 1
-        st.warning(f"❌ Hallucination Check 결과: {decision}")
-        st.info(f"💡 LLM Feedback: {feedback}")
+        st.warning(f"❌ Hallucination Check 결과: {decision}" if lang == "한국어" else f"❌ Hallucination Check Result: {decision}")
+        st.info(f"💡 LLM 피드백: {feedback}" if lang == "한국어" else f"💡 LLM Feedback: {feedback}")
         if "revised_analysis_history" not in state:
             state["revised_analysis_history"] = []
         state["revised_analysis_history"].append(table_analysis)
     else:
         decision = "accept"
         feedback = ""
-        st.success(f"✅ Hallucination Check 결과: {decision}")
+        st.success(f"✅ Hallucination Check 결과: {decision}" if lang == "한국어" else f"✅ Hallucination Check Result: {decision}")
 
     return {
         **state,

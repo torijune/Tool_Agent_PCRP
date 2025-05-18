@@ -54,6 +54,8 @@ class AgentState(TypedDict):
     ft_test_result: Annotated[Dict[str, str], "F/T 검정 결과 dict (e.g. {'성별': '...결과'})"]
     ft_test_summary: Annotated[str, "F/T 검정 결과 자연어 형식"]
 
+    lang: Annotated[str, "선택 언어 (한국어 또는 English)"]
+
 def build_table_graph() -> Runnable:
     builder = StateGraph(state_schema=AgentState)
 

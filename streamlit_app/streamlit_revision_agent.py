@@ -10,8 +10,8 @@ api_key = os.getenv("OPENAI_API_KEY")
 
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.7, openai_api_key=api_key)
 
-# ✅ 수정 프롬프트
-REVISION_PROMPT = """
+REVISION_PROMPT = {
+    "한국어": """
 당신은 통계 데이터를 바탕으로 인구집단 간 패턴과 경향성을 객관적으로 요약하는 데이터 분석 전문가입니다.
 
 아래는 테이블 분석 결과에 대해 일부 잘못된 해석이 포함된 요약입니다. 피드백과 사전에 생성된 가설을 참고하여 잘못된 내용을 제거하고, 원본 데이터를 기반으로 수치 기반의 객관적 분석을 다시 작성할 것.
@@ -51,16 +51,59 @@ Let's think step by step
 10. 숫자값을 직접 쓰지 말고 상대적인 경향만 언급할 것
 11. 이전 수정 버전의 문장 표현을 재사용하지 않고, 새로운 어휘와 구조로 작성할 것
 12. 추론 과정을 작성하지 말고 최종적으로 수정한 보고서만 출력하세요.
+""",
+    "English": """
+You are a data analyst who objectively summarizes population-level patterns based on statistical data.
+
+Below is a summary that contains partially incorrect interpretations of a statistical table analysis. Based on the given feedback and hypotheses, revise the summary by removing inaccurate parts and rewrite a new objective analysis grounded in the data.
+
+📊 Table data (linearized):
+{linearized_table}
+
+📈 Key variables (most selected):
+{anchor}
+
+📈 Statistical analysis results (significant categories):
+{ft_test_summary}
+
+📝 Rejected summary (needs revision):
+{report_to_modify}
+
+❗ Feedback (reason for revision or incorrect points):
+{feedback}
+
+---
+
+Let's think step by step
+
+🎯 Revision Guidelines:
+
+1. Focus only on categories that showed statistically significant differences in the F/T test (p-value < 0.05, marked with *)
+2. Do not list all categories/subcategories; mention only those with meaningful differences
+3. **Do not provide causal interpretations** – explanations like “due to health concerns” or similar are prohibited
+4. No external knowledge or speculation – write only what is verifiable from the table
+5. Describe trends in a form such as:
+   - Showed relatively higher trend
+   - Showed lower values
+6. Write in bullet-style declarative tone (e.g., “~was observed”, “~was shown”)
+7. Use transition words to make the sentences flow naturally; avoid repetitive sentence endings
+8. **Do not mention non-significant or excluded categories**
+9. **If a particular group showed the strongest difference**, emphasize it
+10. Do not mention actual numerical values, only describe relative trends
+11. Do not reuse previous sentence structures – use new wording and phrasing
+12. Do not explain the reasoning – only output the final revised summary
 """
+}
 
 # ✅ LangGraph 노드 함수
 def streamlit_revise_table_analysis_fn(state):
-    st.info("✅ [Revision Agent] Start table analysis revision")
+    lang = state.get("lang", "한국어")
+    st.info("✅ [Revision Agent] 테이블 분석 요약 수정 시작" if lang == "한국어" else "✅ [Revision Agent] Start table analysis revision")
 
     # 📌 table_analysis는 revised_history가 있으면 마지막 것을, 없으면 초안을 fallback
     report_to_modify = state.get("revised_analysis_history", [state.get("table_analysis", "")])[-1]
 
-    prompt = REVISION_PROMPT.format(
+    prompt = REVISION_PROMPT[lang].format(
         linearized_table=state["linearized_table"],
         ft_test_summary=str(state["ft_test_summary"]),
         anchor=state["anchor"],
@@ -68,7 +111,7 @@ def streamlit_revise_table_analysis_fn(state):
         feedback=state["feedback"]
     )
 
-    with st.spinner("LLM Revision Agent가 수정 보고서를 작성 중..."):
+    with st.spinner("LLM이 수정 보고서를 작성 중..." if lang == "한국어" else "LLM is drafting the revised summary..."):
         response = llm.invoke(prompt)
 
     new_revised_analysis = response.content.strip()
@@ -77,7 +120,7 @@ def streamlit_revise_table_analysis_fn(state):
     revision_history = state.get("revised_analysis_history", [])
     revision_history.append(new_revised_analysis)
 
-    st.success("🎉 수정된 최종 보고서:")
+    st.success("🎉 수정된 최종 보고서:" if lang == "한국어" else "🎉 Final revised report:")
     st.text(new_revised_analysis)
     # st.text_area("🪵 Revision History", "\n\n---\n\n".join(revision_history), height=300)
 
