@@ -60,10 +60,10 @@ def main():
         # ✅ 사이드바: 업로드
         with st.sidebar:
             st.header("1️⃣ 분석용 Excel 파일 업로드 (통계표)")
-            uploaded_file = st.file_uploader("📥 분석용 Excel 파일을 선택하세요", type=["xlsx", "xls"])
+            uploaded_file = st.file_uploader("📥 분석용 Excel 파일을 선택하세요", type=None)
 
             st.header("2️⃣ 원시 데이터 Excel 파일 업로드 (Raw DATA, 변수, 코딩가이드, 문항 포함)")
-            raw_data_file = st.file_uploader("📥 원시 데이터 Excel 파일을 선택하세요", type=["xlsx", "xls"], key="raw_data")
+            raw_data_file = st.file_uploader("📥 원시 데이터 Excel 파일을 선택하세요", type=None, key="raw_data")
 
             st.header("3️⃣ 분석 방식 선택")
             analysis_type = st.radio(
