@@ -8,12 +8,12 @@ import traceback
 import logging
 
 # 🌐 다국어 텍스트 (한-영)
-lang = st.sidebar.radio("🌐 Language", ["한국어", "English"])
+lang = st.sidebar.radio("🌐 Language", ["English", "한국어"])
 
 TEXT = {
     "page_selector": {
-        "한국어": ["📖 서비스 소개", "🧪 분석 실행"],
-        "English": ["📖 Service Introduction", "🧪 Run Analysis"]
+        "English": ["📖 Service Introduction", "🧪 Run Analysis"],
+        "한국어": ["📖 서비스 소개", "🧪 분석 실행"]
     },
     "run_page": {
         "title": {
@@ -45,8 +45,8 @@ TEXT = {
             "English": "3️⃣ Select Analysis Mode"
         },
         "mode_options": {
-            "한국어": ["단일 질문 선택 - 직접 선택", "전체 질문 batch - 전체 자동 분석"],
-            "English": ["Single Question - Manual Selection", "Batch All Questions - Full Auto Analysis"]
+            "English": ["Single Question - Manual Selection", "Batch All Questions - Full Auto Analysis"],
+            "한국어": ["단일 질문 선택 - 직접 선택", "전체 질문 batch - 전체 자동 분석"]
         },
         "select_question_header": {
             "한국어": "4️⃣ 분석할 질문 선택",
