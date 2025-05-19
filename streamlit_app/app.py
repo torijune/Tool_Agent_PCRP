@@ -57,10 +57,9 @@ def normalize_key(key: str) -> str:
 
 def main():
     try:
-
         page = st.sidebar.radio("📄 Page", TEXT["page_selector"][lang])
 
-        # 기본 메인 화면
+        ######### 기본 메인 화면 #########
         if page == TEXT["page_selector"][lang][0]:
             st.title(TEXT["intro_title"][lang])
             st.markdown(TEXT["agent_overview"][lang])
@@ -92,7 +91,24 @@ def main():
             st.components.v1.html(mermaid_code, height=800)
             return
 
-        # 서비스 실행 화면
+        ######### 통계 설계 도우미 페이지 #########
+        if page == TEXT["page_selector"][lang][2]:
+            st.title(TEXT["planner_page"]["title"][lang])
+
+            st.markdown(TEXT["planner_page"]["description"][lang])
+
+            st.text_input(TEXT["planner_page"]["survey_topic"][lang], placeholder=TEXT["planner_page"]["survey_topic_ph"][lang])
+
+            st.text_area(TEXT["planner_page"]["research_objectives"][lang], placeholder=TEXT["planner_page"]["research_objectives_ph"][lang])
+
+            st.text_area(TEXT["planner_page"]["variables"][lang], placeholder=TEXT["planner_page"]["variables_ph"][lang])
+
+            st.text_area(TEXT["planner_page"]["hypotheses"][lang], placeholder=TEXT["planner_page"]["hypotheses_ph"][lang])
+
+            st.button(TEXT["planner_page"]["generate"][lang])
+            return
+
+        ######### 서비스 실행 화면 #########
         if page == TEXT["page_selector"][lang][1]:
             st.title(TEXT["run_page"]["title"][lang])
 

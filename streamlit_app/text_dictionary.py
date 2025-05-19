@@ -1,7 +1,7 @@
 TEXT = {
     "page_selector": {
-        "English": ["📖 Service Introduction", "🧪 Run Analysis"],
-        "한국어": ["📖 서비스 소개", "🧪 분석 실행"]
+        "English": ["📖 Service Introduction", "🧪 Run Analysis", "📐 Survey Design Planner"],
+        "한국어": ["📖 서비스 소개", "🧪 분석 실행", "📐 설문조사 계획 생성"]
     },
     "run_page": {
         "title": {
@@ -190,5 +190,51 @@ This service is a multi-agent platform that analyzes and summarizes statistical 
     "mermaid_diagram_title": {
         "한국어": "### 🧠 멀티에이전트 분석 흐름도 (Mermaid Diagram)",
         "English": "### 🧠 Multi-Agent Workflow Diagram (Mermaid)"
+    },
+    "planner_page": {
+        "title": {
+            "한국어": "📐 설문조사 계획 생성",
+            "English": "📐 Survey Design Planner"
+        },
+        "description": {
+            "한국어": "다가오는 통계 조사의 목적과 구조를 설계하는 데 이 도구를 활용하세요.",
+            "English": "Use this tool to define the structure and goals of your upcoming statistical survey."
+        },
+        "survey_topic": {
+            "한국어": "📝 조사 주제",
+            "English": "📝 Survey Topic"
+        },
+        "survey_topic_ph": {
+            "한국어": "예: 대기질에 대한 대중 인식",
+            "English": "e.g., Public perception of air quality"
+        },
+        "research_objectives": {
+            "한국어": "🎯 연구 목적",
+            "English": "🎯 Research Objectives"
+        },
+        "research_objectives_ph": {
+            "한국어": "주요 연구 목표를 입력하세요...",
+            "English": "Define the key research goals..."
+        },
+        "variables": {
+            "한국어": "📊 조사 변수 (예: 연령, 성별, 지역 등)",
+            "English": "📊 Expected Variables (e.g., Age, Gender, Region, etc.)"
+        },
+        "variables_ph": {
+            "한국어": "예상 변수 목록을 입력하세요 (예: 연령, 성별, 지역 등)...",
+            "English": "List of demographic or behavioral variables..."
+        },
+        "hypotheses": {
+            "한국어": "📈 가설 또는 분석 초점",
+            "English": "📈 Hypotheses or Analytical Focus"
+        },
+        "hypotheses_ph": {
+            "한국어": "예: 고령층일수록 오염에 대한 우려가 클 것이다...",
+            "English": "Example: Older respondents are more concerned about pollution..."
+        },
+        "generate": {
+            "한국어": "💡 설문 설계 생성",
+            "English": "💡 Generate Survey Plan"
+        }
     }
 }
