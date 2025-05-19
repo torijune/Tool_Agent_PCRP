@@ -20,8 +20,9 @@ try:
     from dotenv import load_dotenv
     # Try importing your custom modules with error handling
     try:
-        from streamlit_table_workflow_graph import build_table_graph
-        from streamlit_table_parser import load_survey_tables
+        from table_analysis_graph import build_table_graph
+        from stable_analysis_table_parser import load_survey_tables
+        from planner_graph import planner_graph
     except ImportError as e:
         st.error(f"❌ Failed to import required modules: {e}")
         logger.error(f"Import error: {e}")
@@ -94,21 +95,48 @@ def main():
         ######### 통계 설계 도우미 페이지 #########
         if page == TEXT["page_selector"][lang][2]:
             st.title(TEXT["planner_page"]["title"][lang])
-
             st.markdown(TEXT["planner_page"]["description"][lang])
 
-            st.text_input(TEXT["planner_page"]["survey_topic"][lang], placeholder=TEXT["planner_page"]["survey_topic_ph"][lang])
+            topic = st.text_input(
+                TEXT["planner_page"]["survey_topic"][lang],
+                placeholder=TEXT["planner_page"]["survey_topic_ph"][lang]
+            )
+            objective_input = st.text_area(
+                TEXT["planner_page"]["research_objectives"][lang],
+                placeholder=TEXT["planner_page"]["research_objectives_ph"][lang]
+            )
 
-            st.text_area(TEXT["planner_page"]["research_objectives"][lang], placeholder=TEXT["planner_page"]["research_objectives_ph"][lang])
+            if st.button(TEXT["planner_page"]["generate"][lang]):
+                if not topic:
+                    st.warning("📝 조사 주제를 입력해주세요." if lang == "한국어" else "📝 Please enter a survey topic.")
+                    st.stop()
 
-            st.text_area(TEXT["planner_page"]["variables"][lang], placeholder=TEXT["planner_page"]["variables_ph"][lang])
+                with st.spinner("🔍 설문조사 설계 중..." if lang == "한국어" else "🔍 Planning your survey..."):
+                    planner_result = planner_graph.invoke({
+                        "topic": topic,
+                        "objective": objective_input,
+                        "lang": lang
+                    })
 
-            st.text_area(TEXT["planner_page"]["hypotheses"][lang], placeholder=TEXT["planner_page"]["hypotheses_ph"][lang])
+                st.success("✅ 설문조사 설계가 완료되었습니다!" if lang == "한국어" else "✅ Survey planning completed!")
 
-            st.button(TEXT["planner_page"]["generate"][lang])
+                st.markdown("### 🎯 조사 목적 (Objective)")
+                st.info(planner_result["objective"])
+
+                st.markdown("### 🧑‍🤝‍🧑 타겟 응답자 (Target Audience)")
+                st.info(planner_result["audience"])
+
+                st.markdown("### 🧱 설문 구조 (Survey Structure)")
+                st.code(planner_result["structure"], language="markdown")
+
+                st.markdown("### ✍️ 섹션별 문항 제안 (Questions)")
+                st.code(planner_result["questions"], language="markdown")
+
+                st.markdown("### 📊 분석 제안 및 고려사항 (Analysis)")
+                st.code(planner_result["analysis"], language="markdown")
             return
 
-        ######### 서비스 실행 화면 #########
+        ######### 테이블 분석 보고서 작성 실행 화면 #########
         if page == TEXT["page_selector"][lang][1]:
             st.title(TEXT["run_page"]["title"][lang])
 
@@ -142,6 +170,7 @@ def main():
             tables = None
             question_texts = None
             question_keys = None
+
 
             if uploaded_file:
                 try:
