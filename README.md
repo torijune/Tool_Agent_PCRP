@@ -90,6 +90,14 @@ graph TD
 
     F -->|reject >= 3| H
 ```
+
+#### 🔗 Demo Link (Try It Out!)
+
+👉 You can try the live demo here:  
+[🌐 Launch Streamlit App](https://statistical-ai.streamlit.app/)  
+
+![Demo Screenshot](TableFlow.png)
+
 ---
 
 
