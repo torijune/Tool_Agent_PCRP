@@ -253,6 +253,7 @@ def main():
 
         page = st.sidebar.radio("📄 Page", TEXT["page_selector"][lang])
 
+        # 기본 메인 화면
         if page == TEXT["page_selector"][lang][0]:
             st.title(TEXT["intro_title"][lang])
             st.markdown(TEXT["agent_overview"][lang])
@@ -284,6 +285,7 @@ def main():
             st.components.v1.html(mermaid_code, height=800)
             return
 
+        # 서비스 실행 화면
         if page == TEXT["page_selector"][lang][1]:
             st.title(TEXT["run_page"]["title"][lang])
 
