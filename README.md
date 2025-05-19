@@ -96,7 +96,8 @@ graph TD
 👉 You can try the live demo here:  
 [🌐 Launch Streamlit App](https://statistical-ai.streamlit.app/)  
 
-![Demo Screenshot](TableFlow.png)
+![Demo Screenshot_MainPage](streamlit_demo_1.png)
+![Demo Screenshot_AnalysisPage](streamlit_demo_2.png)
 
 ---
 
