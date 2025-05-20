@@ -5,65 +5,70 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-llm = ChatOpenAI(temperature=0.3, model="gpt-4o", openai_api_key=os.getenv("OPENAI_API_KEY"))
+llm = ChatOpenAI(temperature=0.3, model="gpt-4o-mini", openai_api_key=os.getenv("OPENAI_API_KEY"))
 
 QUESTION_SUGGESTION_PROMPT = {
     "한국어": """
-당신은 전문 설문조사 기획자입니다. 다음 조사 정보를 기반으로 각 설문 섹션별 대표 문항을 제안해주세요.
+당신은 고급 설문조사 설계 전문가입니다. 아래 조사 주제, 목적, 타겟 응답자 정보를 바탕으로 의미 있는 설문 문항을 생성하세요.
 
-지침:
-- 각 섹션마다 2~3개의 문항을 제안해주세요
-- 각 문항에는 괄호 안에 질문 유형도 함께 제시 (예: 객관식, 5점 척도, 주관식 등)
-- 이중 질문, 편향 표현, 모호한 질문은 피하세요
-- 문항은 응답자가 이해하기 쉬운 표현으로 구성되어야 합니다
+다음의 Chain of Thought를 순차적으로 따라가며 사고하고 설계하세요:
 
-📌 조사 주제: {topic}
-📌 조사 목적: {objective}
-📌 타겟 응답자: {audience}
-📌 설문 구조:
-{structure}
+Step 1️⃣: 조사 목적에서 측정하고자 하는 핵심 개념 또는 변수들을 추출  
+Step 2️⃣: 타겟 응답자의 특성을 고려하여, 어떤 방식으로 문항을 구성해야 효과적일지 판단  
+Step 3️⃣: 각 핵심 개념에 대응하는 구체적인 문항을 설계하되, 가능한 한 다양한 질문 형식을 활용 (객관식, 5점 척도, 서술형 등)  
+Step 4️⃣: 중복/편향/모호한 문항은 제거하고, 전체 흐름이 자연스럽도록 정렬  
+Step 5️⃣: 각 문항 옆에 (문항 목적 및 유형)을 주석처럼 함께 기입
+
+📌 조사 주제: {topic}  
+📌 조사 목적: {generated_objective}  
+📌 조사 설계: {structure}  
+📌 타겟 응답자 정보: {audience}
 
 ---
 
-✍️ 섹션별 추천 문항:
+✍️ 설계된 문항 목록:
 """,
 
     "English": """
-You are a professional survey planner. Based on the following survey details, suggest key questions for each section.
+You are an expert in survey methodology. Based on the topic, objective, and audience information below, generate thoughtful and research-aligned survey questions.
 
-Guidelines:
-- Propose 2–3 questions per section
-- Indicate the question type in parentheses (e.g., Multiple Choice, Likert Scale, Open-ended)
-- Avoid double-barreled, biased, or vague questions
-- Make the wording simple and easy to understand
+Please reason step-by-step using the following Chain of Thought:
 
-📌 Topic: {topic}
-📌 Objective: {objective}
+Step 1️⃣: Extract key constructs or variables based on the survey objective  
+Step 2️⃣: Consider how the target audience may interpret or respond to those constructs  
+Step 3️⃣: Create diverse question types (multiple choice, 5-point Likert, open-ended) for each construct  
+Step 4️⃣: Remove redundancy, bias, or vague wording, and ensure a logical progression of questions  
+Step 5️⃣: Annotate each question with its purpose and format in parentheses
+
+📌 Topic: {topic}  
+📌 Objective: {generated_objective}  
+📌 Structure: {structure} 
 📌 Target Audience: {audience}
-📌 Survey Structure:
-{structure}
 
 ---
 
-✍️ Suggested Questions by Section:
+✍️ Finalized Survey Questions:
 """
 }
 
 # ✅ LangGraph-compatible Node Function
 def planner_question_agent_fn(state):
     topic = state["topic"]
-    objective = state["objective"]
+    generated_objective = state["generated_objective"]
     audience = state["audience"]
     structure = state["structure"]
     lang = state.get("lang", "한국어")
 
     prompt = QUESTION_SUGGESTION_PROMPT[lang].format(
         topic=topic,
-        objective=objective,
+        generated_objective=generated_objective,
         audience=audience,
         structure=structure
     )
     response = llm.invoke(prompt)
+    import streamlit as st
+    st.markdown("### ✍️ 섹션별 문항 제안" if lang == "한국어" else "### ✍️ Suggested Questions by Section")
+    st.code(response.content.strip(), language="markdown")
     return {
         **state,
         "questions": response.content.strip()

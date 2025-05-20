@@ -119,21 +119,6 @@ def main():
                     })
 
                 st.success("✅ 설문조사 설계가 완료되었습니다!" if lang == "한국어" else "✅ Survey planning completed!")
-
-                st.markdown("### 🎯 조사 목적 (Objective)")
-                st.info(planner_result["objective"])
-
-                st.markdown("### 🧑‍🤝‍🧑 타겟 응답자 (Target Audience)")
-                st.info(planner_result["audience"])
-
-                st.markdown("### 🧱 설문 구조 (Survey Structure)")
-                st.code(planner_result["structure"], language="markdown")
-
-                st.markdown("### ✍️ 섹션별 문항 제안 (Questions)")
-                st.code(planner_result["questions"], language="markdown")
-
-                st.markdown("### 📊 분석 제안 및 고려사항 (Analysis)")
-                st.code(planner_result["analysis"], language="markdown")
             return
 
         ######### 테이블 분석 보고서 작성 실행 화면 #########

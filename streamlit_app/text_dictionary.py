@@ -205,36 +205,20 @@ This service is a multi-agent platform that analyzes and summarizes statistical 
             "English": "📝 Survey Topic"
         },
         "survey_topic_ph": {
-            "한국어": "예: 대기질에 대한 대중 인식",
-            "English": "e.g., Public perception of air quality"
+            "한국어": "예: 대기질에 대한 시민 인식조사",
+            "English": "e.g., Survey citizen perceptions of air quality"
         },
         "research_objectives": {
-            "한국어": "🎯 연구 목적",
-            "English": "🎯 Research Objectives"
+            "한국어": "🎯 연구 배경 및 목적",
+            "English": "🎯 Background and purpose of the study"
         },
         "research_objectives_ph": {
-            "한국어": "주요 연구 목표를 입력하세요...",
-            "English": "Define the key research goals..."
-        },
-        "variables": {
-            "한국어": "📊 조사 변수 (예: 연령, 성별, 지역 등)",
-            "English": "📊 Expected Variables (e.g., Age, Gender, Region, etc.)"
-        },
-        "variables_ph": {
-            "한국어": "예상 변수 목록을 입력하세요 (예: 연령, 성별, 지역 등)...",
-            "English": "List of demographic or behavioral variables..."
-        },
-        "hypotheses": {
-            "한국어": "📈 가설 또는 분석 초점",
-            "English": "📈 Hypotheses or Analytical Focus"
-        },
-        "hypotheses_ph": {
-            "한국어": "예: 고령층일수록 오염에 대한 우려가 클 것이다...",
-            "English": "Example: Older respondents are more concerned about pollution..."
+            "한국어": "예: 최근 1인 가구 증가에 따른 소비행태 변화를 파악하고 정책적 시사점을 도출",
+            "English": "e.g., Identify how the rise of single-person households has changed spending patterns and extract policy implications"
         },
         "generate": {
-            "한국어": "💡 설문 설계 생성",
-            "English": "💡 Generate Survey Plan"
+        "한국어": "💡 설문 설계 생성",
+        "English": "💡 Generate Survey Plan"
         }
     }
 }

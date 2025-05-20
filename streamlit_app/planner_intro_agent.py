@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-llm = ChatOpenAI(temperature=0.3, model="gpt-4o", openai_api_key=os.getenv("OPENAI_API_KEY"))
+llm = ChatOpenAI(temperature=0.3, model="gpt-4o-mini", openai_api_key=os.getenv("OPENAI_API_KEY"))
 
 INTRO_ANALYSIS_PROMPT = {
     "한국어": """
@@ -17,6 +17,9 @@ INTRO_ANALYSIS_PROMPT = {
 
 📌 사용자 입력 조사 주제:
 {topic}
+
+📌 사용자 입력 조사 배경 및 목적:
+{objective}
 
 ---
 
@@ -33,6 +36,9 @@ Please follow these rules:
 📌 Research Topic:
 {topic}
 
+📌 Background and purpose of user input research
+{objective}
+
 ---
 
 🎯 Survey Objective:
@@ -42,13 +48,18 @@ Please follow these rules:
 # ✅ LangGraph-compatible Node Function
 def planner_intro_agent_fn(state):
     topic = state["topic"]
+    objective = state["objective"]
     lang = state.get("lang", "한국어")
 
-    prompt = INTRO_ANALYSIS_PROMPT[lang].format(topic=topic)
+    prompt = INTRO_ANALYSIS_PROMPT[lang].format(topic=topic, 
+                                                objective = objective)
     response = llm.invoke(prompt)
+    import streamlit as st
+    st.markdown("### 🎯 구체화 된 조사 목적 (Objective)" if lang == "한국어" else "### 🎯 Survey Objective")
+    st.info(response.content.strip())
     return {
         **state,
-        "objective": response.content.strip()
+        "generated_objective": response.content.strip()
     }
 
 intro_agent_node = RunnableLambda(planner_intro_agent_fn)

@@ -11,7 +11,8 @@ from planner_analysis_agent import analysis_agent_node
 class PlannerState(TypedDict):
     topic: Annotated[str, "사용자가 입력한 조사 주제"]
     lang: Annotated[str, "사용 언어"]
-    objective: Annotated[str, "LLM이 정제한 조사 목적"]
+    objective: Annotated[str, "사용자가 직접 작성한 조사 목적 및 배경"]
+    generated_objective: Annotated[str, "LLM이 정제한 조사 목적"]
     audience: Annotated[str, "LLM이 제안한 타겟 응답자 특성"]
     structure: Annotated[str, "설문 구조 및 섹션 구성"]
     questions: Annotated[str, "각 섹션별 추천 문항"]
