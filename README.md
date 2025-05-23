@@ -99,6 +99,11 @@ graph TD
 ![Demo Screenshot_MainPage](streamlit_demo_1.png)
 ![Demo Screenshot_AnalysisPage](streamlit_demo_2.png)
 
+#### 🎥 **GIF Preview of App Interaction**
+
+![App Demo GIF](demo_interaction.gif)
+
+
 ---
 
 
