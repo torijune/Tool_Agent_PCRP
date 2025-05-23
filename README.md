@@ -7,11 +7,8 @@ LangGraph 기반의 Tool-Using Agent 프로젝트입니다.
 
 본 프로젝트는 Tool Critic Agent 개발 이후, LangGraph 기반의 다양한 유용한 Tool 연구 및 개발에 집중하고 있습니다.  
  Critic Loop은 기본 프레임워크로만 구축되었으며, 주요 목표는 실험적 Tool Agent 설계 및 최적화입니다.
-## System Overview
 
-![System Overview](SystemOverview.png)
-
-### Main System Mermaid Pipeline Diagram
+## Main System Mermaid Pipeline Diagram
 ```mermaid
 %%{init: {'theme':'default', 'flowchart': {'nodeSpacing': 20, 'rankSpacing': 20}}}%%
 graph TD
@@ -53,8 +50,6 @@ graph TD
 - Custom LangGraph Multi-Agent
     - Start → User Inpur Query → Abstracts Retrieval → Retrieved Documents Relevance Check → Critic Checker → Generation Output
 
-![Abstract Analysis Tool Overview](AbstractFlow.png)
-
 #### Abstract Analysis Tool Mermaid Pipeline Diagram
 ```mermaid
 %%{init: {'theme':'default', 'flowchart': {'nodeSpacing': 20, 'rankSpacing': 20}}}%%
@@ -68,8 +63,6 @@ graph TD
 ### Social Survey Structure data (e.g. table) analysis Tool: 
 - Custom LangGraph Multi-Agent
     - **Start** → **User Inpur Query** → **Retrieval Survey File**(excel, csv, ...) → **Table Parser** → **Generating Hypothesis** about rows and columns → Table **Numeric Analysis**(Pandas - mean, min, max , ...) → **Table Analysis**(Numeric + Linearlized Table + Hypothesis + User Question) → Generated Analysis Result **Hallucination Check** → **Revision** Analysis (If Needed) → Sentence **Polishing** → **Critic Checker** → **Generation Output**
-
-![Social Survey Analysis Tool Overview](TableFlow.png)
 
 #### Social Survey Structure data analysis Tool Mermaid Pipeline Diagram
 
@@ -101,7 +94,7 @@ graph TD
 
 #### 🎥 **GIF Preview of App Interaction**
 
-![App Demo GIF](demo_interaction.gif)
+![App Demo GIF](https://github.com/torijune/Tool_Agent_PCRP/blob/main/demo_interaction.gif)
 
 
 ---
