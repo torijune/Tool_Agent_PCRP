@@ -193,7 +193,7 @@ def main():
 
                     selected_option = st.selectbox(TEXT["run_page"]["selectbox_label"][lang], options)
                     selected_index = options.index(selected_option)
-                    selected_question_key = question_keys[selected_index]
+                    selected_question_key = question_keys[selected_index].strip()
                     selected_table = tables[selected_question_key]
 
                     st.success(f"{TEXT['run_page']['selected_question'][lang]} {question_texts.get(selected_question_key, selected_question_key)}")

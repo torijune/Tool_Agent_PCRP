@@ -63,6 +63,7 @@ def summarize_ft_test(result_df: pd.DataFrame, lang: str = "한국어") -> str:
 def run_statistical_tests(test_type, df, question_key, demo_dict):
     # ✅ F/T-test 실행 함수
     def run_ft_test_df(df: pd.DataFrame, question_key: str, demo_dict: dict) -> pd.DataFrame:
+        question_key = question_key.strip()
         rows = []
 
         for demo_col, label in demo_dict.items():
@@ -101,6 +102,11 @@ def run_statistical_tests(test_type, df, question_key, demo_dict):
         return result_df
     
     def run_chi_square_test_df(df: pd.DataFrame, question_key: str, demo_dict: dict) -> pd.DataFrame:
+        question_key = question_key.strip()
+        if question_key not in df.columns:
+            st.error(f"❌ 질문 항목 '{question_key}' 이(가) 데이터에 존재하지 않습니다.")
+            return pd.DataFrame([])
+
         rows = []
 
         for demo_col, label in demo_dict.items():
@@ -146,7 +152,7 @@ def ft_star_analysis_node_fn(state: dict) -> dict:
     try:
 
         raw_data_file = state["raw_data_file"]
-        question_key = state["selected_key"]
+        question_key = state["selected_key"].strip()
         test_type = state["test_type"]
         lang = state.get("lang", "한국어")
 
@@ -157,8 +163,8 @@ def ft_star_analysis_node_fn(state: dict) -> dict:
             raw_data = pd.read_excel(raw_data_file, sheet_name="DATA")
             demo_df = pd.read_excel(raw_data_file, sheet_name="DEMO")
 
-            # ✅ 컬럼명 정규화: '-' → '_'
-            raw_data.columns = [col.replace("-", "_") for col in raw_data.columns]
+            # ✅ 컬럼명 정규화: '-' → '_', 그리고 양쪽 공백 제거
+            raw_data.columns = [col.replace("-", "_").strip() for col in raw_data.columns]
 
             demo_mapping = extract_demo_mapping_from_dataframe(demo_df)
 
