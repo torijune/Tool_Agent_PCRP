@@ -101,23 +101,25 @@ def table_parser_node_fn(state):
     tables, question_texts, question_keys = load_survey_tables(uploaded_file)
 
     if selected_key is not None:
-        norm_key = normalize_key(selected_key)
-        if norm_key not in tables:
+        selected_key = normalize_key(selected_key.strip())
+        if selected_key not in tables:
             st.error(f"❌ 선택된 질문 키 '{selected_key}' 에 해당하는 테이블이 존재하지 않습니다.")
             st.stop()
-        selected_table = tables[norm_key]
-        selected_question = question_texts[norm_key]
+        selected_table = tables[selected_key]
+        selected_question = question_texts[selected_key]
 
+    # 단일 질문일 경우
     elif analysis_type:
         options = [f"[{key}] {question_texts[key]}" for key in question_keys]
         selected_option = st.selectbox("📝 질문 목록", options)
         selected_index = options.index(selected_option)
-        selected_key = question_keys[selected_index]
+        selected_key = normalize_key(question_keys[selected_index].strip())
         selected_table = tables[selected_key]
         selected_question = question_texts[selected_key]
 
+    # 전체 질문에 대한 분석인 경우
     else:
-        selected_key = question_keys[0]
+        selected_key = normalize_key(question_keys[0].strip())
         selected_table = tables[selected_key]
         selected_question = question_texts[selected_key]
 

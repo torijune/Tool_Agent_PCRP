@@ -171,7 +171,9 @@ def main():
                     st.error(f"{TEXT['run_page']['upload_table_error'][lang]} {str(e)}")
                     st.stop()
 
+################################## 단일 index 분석 실행 (analysis_type_flag: True) ##################################
                 if analysis_type_flag and tables is not None:
+                    # 어떤 질문에 대해서 진행할지 물어보기
                     st.subheader(TEXT["run_page"]["select_question_header"][lang])
                     st.info(TEXT["run_page"]["select_question_info"][lang])
 
@@ -191,16 +193,29 @@ def main():
                         logger.error("No valid question texts found")
                         st.stop()
 
+                    # 질문 선택창
                     selected_option = st.selectbox(TEXT["run_page"]["selectbox_label"][lang], options)
                     selected_index = options.index(selected_option)
                     selected_question_key = question_keys[selected_index].strip()
-                    selected_table = tables[selected_question_key]
+                    selected_key = normalize_key(selected_question_key)
+                    normalized_tables = {normalize_key(k): v for k, v in tables.items()}
+                    normalized_questions = {normalize_key(k): v for k, v in question_texts.items()}
+                    
+                    if selected_key not in normalized_tables:
+                        st.error(f"❌ 선택된 질문 키 '{selected_key}' 에 해당하는 테이블이 존재하지 않습니다.")
+                        st.stop()
+                    
+                    selected_table = normalized_tables[selected_key]
+                    selected_question = normalized_questions[selected_key]
 
-                    st.success(f"{TEXT['run_page']['selected_question'][lang]} {question_texts.get(selected_question_key, selected_question_key)}")
+                    st.success(f"{TEXT['run_page']['selected_question'][lang]} {selected_question}")
                     st.dataframe(selected_table.head(), use_container_width=True)
+################################## 전체 질문 분석 실행 (analysis_type_flag: False) ##################################
+                # question_keys에 있는 모든 index들에 대해서 analysis 진행 -> 어떻게?
                 elif not analysis_type_flag:
                     st.info(TEXT["run_page"]["batch_analysis_info"][lang])
 
+            # flag에 따라서 분석 과정을 실행 
             run = st.button(TEXT["run_page"]["run_button"][lang], use_container_width=True)
 
             if run:
@@ -212,6 +227,11 @@ def main():
                     st.error(TEXT["run_page"]["error_missing_raw"][lang])
                     logger.error("Analysis started without raw data file")
                     st.stop()
+
+                uploaded_file_content = uploaded_file.read()
+                uploaded_file.seek(0)
+                raw_data_content = raw_data_file.read()
+                raw_data_file.seek(0)
 
                 try:
                     logger.info("Reading raw data file")
@@ -231,6 +251,7 @@ def main():
                     st.error(f"{TEXT['run_page']['workflow_build_error'][lang]} {str(e)}")
                     st.stop()
 
+                # 최종적으로 LangGraph로 전달할 state 정의
                 init_state = {
                     "analysis_type": analysis_type_flag,
                     "uploaded_file": io.BytesIO(uploaded_file.read()),
@@ -241,24 +262,51 @@ def main():
                 if analysis_type_flag and selected_question_key is not None:
                     init_state["selected_key"] = selected_question_key
 
-                try:
-                    logger.info("Invoking workflow")
-                    with st.spinner(TEXT["run_page"]["analyzing_spinner"][lang]):
-                        result = workflow.invoke(init_state)
-                    logger.info("Workflow completed successfully")
-                except Exception as e:
-                    logger.error(f"Workflow execution error: {traceback.format_exc()}")
-                    st.error(f"{TEXT['run_page']['workflow_execute_error'][lang]} {str(e)}")
-                    st.stop()
+                # Single Question analysis
+                if analysis_type_flag:
+                    try:
+                        logger.info("Invoking workflow")
+                        with st.spinner(TEXT["run_page"]["analyzing_spinner"][lang]):
+                            result = workflow.invoke(init_state)
+                        logger.info("Workflow completed successfully")
+                    except Exception as e:
+                        logger.error(f"Workflow execution error: {traceback.format_exc()}")
+                        st.error(f"{TEXT['run_page']['workflow_execute_error'][lang]} {str(e)}")
+                        st.stop()
 
-                st.success(TEXT["run_page"]["analysis_done"][lang])
+                    st.success(TEXT["run_page"]["analysis_done"][lang])
 
-                if "polishing_result" in result:
+                    if "polishing_result" in result:
+                        st.markdown(TEXT["run_page"]["final_result_title"][lang])
+                        st.text_area("Polished Report", result["polishing_result"], height=300)
+                    else:
+                        st.warning(TEXT["run_page"]["no_result_warning"][lang])
+                        logger.warning("No polishing_result in workflow output")
+                # Batch analysis for all questions
+                elif not analysis_type_flag:
+                    all_results = []
+                    for key in question_keys:
+                        logger.info(f"Running batch analysis for question key: {key}")
+                        init_state_loop = {
+                            "analysis_type": True,  # treat as single for each
+                            "selected_key": key.strip(),
+                            "uploaded_file": io.BytesIO(uploaded_file_content),
+                            "raw_data_file": io.BytesIO(raw_data_content),
+                            "lang": lang
+                        }
+                        try:
+                            result = workflow.invoke(init_state_loop)
+                            if "polishing_result" in result:
+                                all_results.append(f"### [{key}]\n{result['polishing_result']}")
+                        except Exception as e:
+                            logger.error(f"Workflow execution error for key {key}: {traceback.format_exc()}")
+                            st.error(f"❌ {key} 분석 중 오류 발생: {str(e)}")
+                            continue
+
+                    combined_result = "\n\n---\n\n".join(all_results)
                     st.markdown(TEXT["run_page"]["final_result_title"][lang])
-                    st.text_area("Polished Report", result["polishing_result"], height=300)
-                else:
-                    st.warning(TEXT["run_page"]["no_result_warning"][lang])
-                    logger.warning("No polishing_result in workflow output")
+                    st.text_area("Combined Polished Report", combined_result, height=500)
+                    return
     except Exception as e:
         logger.error(f"Unhandled exception: {traceback.format_exc()}")
         st.error(f"{TEXT['run_page']['unexpected_error'][lang]} {str(e)}")
