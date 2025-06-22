@@ -63,7 +63,7 @@ def summarize_ft_test(result_df: pd.DataFrame, lang: str = "한국어") -> str:
 def run_statistical_tests(test_type, df, question_key, demo_dict):
     # ✅ F/T-test 실행 함수
     def run_ft_test_df(df: pd.DataFrame, question_key: str, demo_dict: dict) -> pd.DataFrame:
-        question_key = question_key.strip()
+        question_key = question_key.replace("-", "_").strip()
         rows = []
 
         for demo_col, label in demo_dict.items():
@@ -102,8 +102,8 @@ def run_statistical_tests(test_type, df, question_key, demo_dict):
         return result_df
     
     def run_chi_square_test_df(df: pd.DataFrame, question_key: str, demo_dict: dict) -> pd.DataFrame:
-        question_key = question_key.strip()
-        if question_key not in df.columns:
+        question_key = question_key.replace("-", "_").strip()
+        if question_key not in [col.replace("-", "_").strip() for col in df.columns]:
             st.error(f"❌ 질문 항목 '{question_key}' 이(가) 데이터에 존재하지 않습니다.")
             return pd.DataFrame([])
 
@@ -115,7 +115,8 @@ def run_statistical_tests(test_type, df, question_key, demo_dict):
                 continue
 
             try:
-                contingency_table = pd.crosstab(df[demo_col], df[question_key])
+                normalized_columns = {col.replace("-", "_").strip(): col for col in df.columns}
+                contingency_table = pd.crosstab(df[demo_col], df[normalized_columns[question_key]])
 
                 if contingency_table.shape[0] < 2 or contingency_table.shape[1] < 2:
                     st.info(f"⚠️ 스킵됨: {label} - 교차표 크기 부족")
@@ -152,7 +153,7 @@ def ft_star_analysis_node_fn(state: dict) -> dict:
     try:
 
         raw_data_file = state["raw_data_file"]
-        question_key = state["selected_key"].strip()
+        question_key = state["selected_key"].replace("-", "_").strip()
         test_type = state["test_type"]
         lang = state.get("lang", "한국어")
 

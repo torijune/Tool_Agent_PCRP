@@ -94,17 +94,19 @@ def table_parser_node_fn(state):
     uploaded_file = state.get("uploaded_file", None)
     selected_key = state.get("selected_key", None)
 
-    if uploaded_file is None:
-        st.warning("⚠️ 통계표 엑셀 파일이 업로드되지 않았습니다. 파일을 먼저 업로드하세요.")
-        st.stop()
+    if analysis_type:
+        if uploaded_file is None:
+            st.warning("⚠️ 통계표 엑셀 파일이 업로드되지 않았습니다. 파일을 먼저 업로드하세요.")
+            st.stop()
 
     tables, question_texts, question_keys = load_survey_tables(uploaded_file)
 
     if selected_key is not None:
         selected_key = normalize_key(selected_key.strip())
         if selected_key not in tables:
-            st.error(f"❌ 선택된 질문 키 '{selected_key}' 에 해당하는 테이블이 존재하지 않습니다.")
-            st.stop()
+            if analysis_type:
+                st.error(f"❌ 선택된 질문 키 '{selected_key}' 에 해당하는 테이블이 존재하지 않습니다.")
+                st.stop()
         selected_table = tables[selected_key]
         selected_question = question_texts[selected_key]
 

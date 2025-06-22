@@ -6,6 +6,7 @@ from langgraph.graph.message import add_messages
 from pandas import DataFrame
 
 from table_analysis_agent import streamlit_table_anaylsis_node
+import streamlit as st
 from stable_analysis_table_parser import streamlit_table_parser_node
 from table_analysis_hallucination_check_agent import streamlit_hallucination_check_node
 from table_analysis_revision_agent import streamlit_revise_table_analysis_node
@@ -84,13 +85,17 @@ def build_table_graph() -> Runnable:
     def route_hallucination(state):
         result = state.get("hallucination_check", "")
         reject_count = state.get("hallucination_reject_num", 0)
-        print(f"💡 Hallucination Check: {result} | Reject Count: {reject_count}")
+        is_interactive = state.get("analysis_type", True)
+
+        if is_interactive:
+            st.info(f"💡 Hallucination Check: {result} | Reject Count: {reject_count}")
 
         if result == "accept":
             return "sentence_polish_node"
         elif result == "reject":
             if reject_count >= 4:
-                print("⚠️ Reject count exceeded. Forcing END.")
+                if is_interactive:
+                    st.warning("⚠️ Reject count exceeded. Forcing END.")
                 return "sentence_polish_node"
             return "revise_table_analysis"
         else:

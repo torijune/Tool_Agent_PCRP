@@ -45,8 +45,9 @@ def get_anchor_fn(state):
         st.error("❌ 'selected_table'이 state에 없습니다." if lang == "한국어" else "❌ 'selected_table' is missing from the state.")
         return state
 
-    anchor = get_anchor(selected_table)
-    st.text("선택된 anchor들: " + ", ".join(anchor) if lang == "한국어" else "Selected anchors: " + ", ".join(anchor))
+    anchor = get_anchor(selected_table) if state.get("analysis_type", True) else []
+    if state.get("analysis_type", True):
+        st.text("선택된 anchor들: " + ", ".join(anchor) if lang == "한국어" else "Selected anchors: " + ", ".join(anchor))
     return {
         **state,
         "anchor": anchor

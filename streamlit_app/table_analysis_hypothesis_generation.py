@@ -50,7 +50,8 @@ Example:
 }
 
 def streamlit_hypothesis_generate_fn(state):
-    st.info("✅ [Hypothesis Agent] Start hypothesis generation")
+    if state.get("analysis_type", True):
+        st.info("✅ [Hypothesis Agent] Start hypothesis generation")
     selected_table = state["selected_table"]
     selected_question = state["selected_question"]
 
@@ -67,24 +68,25 @@ def streamlit_hypothesis_generate_fn(state):
     column_names_str = ", ".join(map(str, column_names))
 
     # ✅ Streamlit - Table Overview 블록
-    with st.container():
-        st.markdown("### ✅ 테이블 개요" if state.get("lang", "한국어") == "한국어" else "### ✅ Table Overview")
+    if state.get("analysis_type", True):
+        with st.container():
+            st.markdown("### ✅ 테이블 개요" if state.get("lang", "한국어") == "한국어" else "### ✅ Table Overview")
 
-        col1, col2 = st.columns(2)
+            col1, col2 = st.columns(2)
 
-        with col1:
-            st.markdown("#### 📝 행 이름" if state.get("lang", "한국어") == "한국어" else "#### 📝 Row Names")
-            preview_rows = ", ".join(row_names[:5]) + " ..." if len(row_names) > 5 else row_names_str
-            st.markdown(f"**{'미리보기' if state.get('lang', '한국어') == '한국어' else 'Preview'}:** {preview_rows}")
-            with st.expander("📋 전체 Row Names 보기"):
-                st.markdown(row_names_str)
+            with col1:
+                st.markdown("#### 📝 행 이름" if state.get("lang", "한국어") == "한국어" else "#### 📝 Row Names")
+                preview_rows = ", ".join(row_names[:5]) + " ..." if len(row_names) > 5 else row_names_str
+                st.markdown(f"**{'미리보기' if state.get('lang', '한국어') == '한국어' else 'Preview'}:** {preview_rows}")
+                with st.expander("📋 전체 Row Names 보기"):
+                    st.markdown(row_names_str)
 
-        with col2:
-            st.markdown("#### 📝 열 이름" if state.get("lang", "한국어") == "한국어" else "#### 📝 Column Names")
-            preview_columns = ", ".join(column_names[:5]) + " ..." if len(column_names) > 5 else column_names_str
-            st.markdown(f"**{'미리보기' if state.get('lang', '한국어') == '한국어' else 'Preview'}:** {preview_columns}")
-            with st.expander("📋 전체 Column Names 보기"):
-                st.markdown(column_names_str)
+            with col2:
+                st.markdown("#### 📝 열 이름" if state.get("lang", "한국어") == "한국어" else "#### 📝 Column Names")
+                preview_columns = ", ".join(column_names[:5]) + " ..." if len(column_names) > 5 else column_names_str
+                st.markdown(f"**{'미리보기' if state.get('lang', '한국어') == '한국어' else 'Preview'}:** {preview_columns}")
+                with st.expander("📋 전체 Column Names 보기"):
+                    st.markdown(column_names_str)
 
     lang = state.get("lang", "한국어")
 
@@ -95,15 +97,19 @@ def streamlit_hypothesis_generate_fn(state):
         selected_question=selected_question
     )
 
-    with st.spinner("Generating hypotheses..." if lang == "English" else "가설 생성 중..."):
+    if state.get("analysis_type", True):
+        with st.spinner("Generating hypotheses..." if lang == "English" else "가설 생성 중..."):
+            response = llm.invoke(prompt)
+    else:
         response = llm.invoke(prompt)
 
     hypotheses = response.content.strip()
 
     # ✅ Hypothesis 블록 → 바로 전체 출력
-    with st.container():
-        st.markdown("### ✅ 생성된 가설" if lang == "한국어" else "### ✅ Generated Hypotheses")
-        st.markdown(hypotheses)
+    if state.get("analysis_type", True):
+        with st.container():
+            st.markdown("### ✅ 생성된 가설" if lang == "한국어" else "### ✅ Generated Hypotheses")
+            st.markdown(hypotheses)
 
     return {**state, "generated_hypotheses": hypotheses}
 

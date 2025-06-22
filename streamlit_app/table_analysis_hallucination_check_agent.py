@@ -82,7 +82,8 @@ Please evaluate whether the summary accurately and consistently reflects the sta
 def streamlit_hallucination_check_node_fn(state):
     hallucination_reject_num = state.get("hallucination_reject_num", 0)
     lang = state.get("lang", "한국어")
-    st.info("✅ [Hallucination Check Agent] 환각 평가 시작" if lang == "한국어" else "✅ [Hallucination Check Agent] Start hallucination evaluation")
+    if state.get("analysis_type", True):
+        st.info("✅ [Hallucination Check Agent] 환각 평가 시작" if lang == "한국어" else "✅ [Hallucination Check Agent] Start hallucination evaluation")
 
     # 🔁 수정 여부에 따라 분석 결과 선택
     if "revised_analysis_history" in state and state["revised_analysis_history"]:
@@ -99,7 +100,10 @@ def streamlit_hallucination_check_node_fn(state):
     )
 
     # ✅ LLM 호출
-    with st.spinner("Hallucination 평가 중..." if lang == "한국어" else "Evaluating hallucination..."):
+    if state.get("analysis_type", True):
+        with st.spinner("Hallucination 평가 중..." if lang == "한국어" else "Evaluating hallucination..."):
+            response = llm.invoke(prompt)
+    else:
         response = llm.invoke(prompt)
 
     result = response.content.strip()
@@ -109,15 +113,17 @@ def streamlit_hallucination_check_node_fn(state):
         decision = "reject"
         feedback = result[len("reject"):].strip(": ").strip()
         hallucination_reject_num += 1
-        st.warning(f"❌ Hallucination Check 결과: {decision}" if lang == "한국어" else f"❌ Hallucination Check Result: {decision}")
-        st.info(f"💡 LLM 피드백: {feedback}" if lang == "한국어" else f"💡 LLM Feedback: {feedback}")
+        if state.get("analysis_type", True):
+            st.warning(f"❌ Hallucination Check 결과: {decision}" if lang == "한국어" else f"❌ Hallucination Check Result: {decision}")
+            st.info(f"💡 LLM 피드백: {feedback}" if lang == "한국어" else f"💡 LLM Feedback: {feedback}")
         if "revised_analysis_history" not in state:
             state["revised_analysis_history"] = []
         state["revised_analysis_history"].append(table_analysis)
     else:
         decision = "accept"
         feedback = ""
-        st.success(f"✅ Hallucination Check 결과: {decision}" if lang == "한국어" else f"✅ Hallucination Check Result: {decision}")
+        if state.get("analysis_type", True):
+            st.success(f"✅ Hallucination Check 결과: {decision}" if lang == "한국어" else f"✅ Hallucination Check Result: {decision}")
 
     return {
         **state,

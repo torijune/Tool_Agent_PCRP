@@ -73,22 +73,33 @@ If the sentences are too choppy ("~했음. ~했음." repetition), redundant, or 
 }
 
 def streamlit_sentence_polish_fn(state):
-    lang = state.get("lang", "한국어")
-    st.info("✅ [Polish Agent] 문장 다듬기 시작" if lang == "한국어" else "✅ [Polish Agent] Start sentence polishing")
-
-    hallucination_reject_num = state["hallucination_reject_num"]
-
-    raw_summary = state["table_analysis"] if hallucination_reject_num == 0 else state["revised_analysis"]
-
-    with st.spinner("LLM이 문장을 다듬는 중..." if lang == "한국어" else "LLM is polishing the summary..."):
+    if state.get("analysis_type") is False:
+        # Skip UI rendering
+        lang = state.get("lang", "한국어")
+        hallucination_reject_num = state["hallucination_reject_num"]
+        raw_summary = state["table_analysis"] if hallucination_reject_num == 0 else state["revised_analysis"]
         response = llm.invoke(POLISHING_PROMPT[lang].format(raw_summary=raw_summary))
+        polishing_result = response.content.strip()
+        st.success(f"✅ '{state['selected_key']}' 보고서 분석 완료")
+        print("✅ 전체 문장 다듬기 완료")
+        return {**state, "polishing_result": polishing_result}
+    else:
+        lang = state.get("lang", "한국어")
+        st.info("✅ [Polish Agent] 문장 다듬기 시작" if lang == "한국어" else "✅ [Polish Agent] Start sentence polishing")
 
-    polishing_result = response.content.strip()
+        hallucination_reject_num = state["hallucination_reject_num"]
 
-    st.text("### ✅ 최종 보고서" if lang == "한국어" else "### ✅ Final Report")
-    st.success("🎉 다듬어진 최종 요약문:" if lang == "한국어" else "🎉 Polished Final Summary:")
-    st.text(polishing_result)
+        raw_summary = state["table_analysis"] if hallucination_reject_num == 0 else state["revised_analysis"]
 
-    return {**state, "polishing_result": polishing_result}
+        with st.spinner("LLM이 문장을 다듬는 중..." if lang == "한국어" else "LLM is polishing the summary..."):
+            response = llm.invoke(POLISHING_PROMPT[lang].format(raw_summary=raw_summary))
+
+        polishing_result = response.content.strip()
+
+        st.text("### ✅ 최종 보고서" if lang == "한국어" else "### ✅ Final Report")
+        st.success("🎉 다듬어진 최종 요약문:" if lang == "한국어" else "🎉 Polished Final Summary:")
+        st.text(polishing_result)
+
+        return {**state, "polishing_result": polishing_result}
 
 streamlit_sentence_polish_node = RunnableLambda(streamlit_sentence_polish_fn)

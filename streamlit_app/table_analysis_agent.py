@@ -42,6 +42,7 @@ Let's think step by step.
 🎯 분석 및 요약 지침:
 1. 반드시 **F/T test 결과에서 통계적으로 유의미한 대분류만을 중심으로 분석**할 것 (p-value < 0.05, 유의성 별(*) 존재)
 2. 모든 대분류 / 소분류를 나열하지 말고, **통계 분석 결과**에서 차이가 크고 의미 있는 대분류만 선택적으로 언급할 것
+    - 통계적으로 유의미한 대분류가 없을 경우 (유의성 별(*)가 없을 경우) 주어진 p-value가 작은 대분류에서 주요 항목에 포함되는 대분류만 언급할 것
 3. **절대 해석하지 말 것**. 수치적 차이에 대한 인과 해석(예: 건강에 민감해서, 주변에 있어서 등)은 모두 **금지**함
 4. 외부 배경지식, 주관적 추론, 해석적 언급은 절대 금지. 표로부터 직접 **확인 가능한 사실만 서술**할 것
 5. 수치 기반 경향을 다음과 같은 형식으로 서술하며 음슴체로 작성할 것 (예: ~했음, ~로 나타났음):
@@ -81,6 +82,7 @@ Let's think step by step.
 🎯 Guidelines for Analysis and Summary:
 1. Focus only on row groups that are statistically significant (p-value < 0.05, marked with asterisk)
 2. Do not list all groups/subgroups; highlight only those with major, meaningful differences
+    - If there are no statistically significant categories (if there are no significant stars (*)), only mention the categories included in the main items with small p-values.
 3. **Do not interpret causality** (e.g., due to health sensitivity, etc.) – strictly prohibited
 4. No external knowledge or subjective speculation allowed – only describe facts verifiable from the table
 5. Describe trends using expressions like:

@@ -98,7 +98,8 @@ Let's think step by step
 # ✅ LangGraph 노드 함수
 def streamlit_revise_table_analysis_fn(state):
     lang = state.get("lang", "한국어")
-    st.info("✅ [Revision Agent] 테이블 분석 요약 수정 시작" if lang == "한국어" else "✅ [Revision Agent] Start table analysis revision")
+    if state.get("analysis_type", True):
+        st.info("✅ [Revision Agent] 테이블 분석 요약 수정 시작" if lang == "한국어" else "✅ [Revision Agent] Start table analysis revision")
 
     # 📌 table_analysis는 revised_history가 있으면 마지막 것을, 없으면 초안을 fallback
     report_to_modify = state.get("revised_analysis_history", [state.get("table_analysis", "")])[-1]
@@ -111,7 +112,10 @@ def streamlit_revise_table_analysis_fn(state):
         feedback=state["feedback"]
     )
 
-    with st.spinner("LLM이 수정 보고서를 작성 중..." if lang == "한국어" else "LLM is drafting the revised summary..."):
+    if state.get("analysis_type", True):
+        with st.spinner("LLM이 수정 보고서를 작성 중..." if lang == "한국어" else "LLM is drafting the revised summary..."):
+            response = llm.invoke(prompt)
+    else:
         response = llm.invoke(prompt)
 
     new_revised_analysis = response.content.strip()
@@ -120,8 +124,9 @@ def streamlit_revise_table_analysis_fn(state):
     revision_history = state.get("revised_analysis_history", [])
     revision_history.append(new_revised_analysis)
 
-    st.success("🎉 수정된 최종 보고서:" if lang == "한국어" else "🎉 Final revised report:")
-    st.text(new_revised_analysis)
+    if state.get("analysis_type", True):
+        st.success("🎉 수정된 최종 보고서:" if lang == "한국어" else "🎉 Final revised report:")
+        st.text(new_revised_analysis)
     # st.text_area("🪵 Revision History", "\n\n---\n\n".join(revision_history), height=300)
 
     return {

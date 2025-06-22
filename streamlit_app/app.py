@@ -10,7 +10,7 @@ import traceback
 import logging
 
 # 🌐 다국어 텍스트 (한-영)
-lang = st.sidebar.radio("🌐 Language", ["English", "한국어"])
+lang = st.sidebar.radio("🌐 Language", ["English", "한국어"], index=1)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -266,7 +266,10 @@ def main():
                 if analysis_type_flag:
                     try:
                         logger.info("Invoking workflow")
-                        with st.spinner(TEXT["run_page"]["analyzing_spinner"][lang]):
+                        if init_state.get("analysis_type", True):
+                            with st.spinner(TEXT["run_page"]["analyzing_spinner"][lang]):
+                                result = workflow.invoke(init_state)
+                        else:
                             result = workflow.invoke(init_state)
                         logger.info("Workflow completed successfully")
                     except Exception as e:
@@ -274,21 +277,23 @@ def main():
                         st.error(f"{TEXT['run_page']['workflow_execute_error'][lang]} {str(e)}")
                         st.stop()
 
-                    st.success(TEXT["run_page"]["analysis_done"][lang])
+                    if init_state.get("analysis_type", True):
+                        st.success(TEXT["run_page"]["analysis_done"][lang])
 
-                    if "polishing_result" in result:
-                        st.markdown(TEXT["run_page"]["final_result_title"][lang])
-                        st.text_area("Polished Report", result["polishing_result"], height=300)
-                    else:
-                        st.warning(TEXT["run_page"]["no_result_warning"][lang])
-                        logger.warning("No polishing_result in workflow output")
+                        if "polishing_result" in result:
+                            st.markdown(TEXT["run_page"]["final_result_title"][lang])
+                            st.text_area("Polished Report", result["polishing_result"], height=300)
+                        else:
+                            st.warning(TEXT["run_page"]["no_result_warning"][lang])
+                            logger.warning("No polishing_result in workflow output")
                 # Batch analysis for all questions
                 elif not analysis_type_flag:
-                    all_results = []
+                    all_results = {}
                     for key in question_keys:
                         logger.info(f"Running batch analysis for question key: {key}")
                         init_state_loop = {
-                            "analysis_type": True,  # treat as single for each
+                            # Used to suppress logging and UI for batch mode
+                            "analysis_type": False,  # Used to suppress logging and UI for batch mode
                             "selected_key": key.strip(),
                             "uploaded_file": io.BytesIO(uploaded_file_content),
                             "raw_data_file": io.BytesIO(raw_data_content),
@@ -297,13 +302,13 @@ def main():
                         try:
                             result = workflow.invoke(init_state_loop)
                             if "polishing_result" in result:
-                                all_results.append(f"### [{key}]\n{result['polishing_result']}")
+                                all_results[key] = result["polishing_result"]
                         except Exception as e:
                             logger.error(f"Workflow execution error for key {key}: {traceback.format_exc()}")
                             st.error(f"❌ {key} 분석 중 오류 발생: {str(e)}")
                             continue
 
-                    combined_result = "\n\n---\n\n".join(all_results)
+                    combined_result = "\n\n---\n\n".join(f"### [{k}]\n{v}" for k, v in all_results.items())
                     st.markdown(TEXT["run_page"]["final_result_title"][lang])
                     st.text_area("Combined Polished Report", combined_result, height=500)
                     return
