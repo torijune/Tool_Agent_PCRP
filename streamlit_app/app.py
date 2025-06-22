@@ -216,6 +216,77 @@ def main():
                     st.info(TEXT["run_page"]["batch_analysis_info"][lang])
 
             # flag에 따라서 분석 과정을 실행 
+
+            # Per-question analysis plan UI for batch mode
+            if not analysis_type_flag and tables is not None:
+                st.subheader("📌 질문별 분석 방식 설정")
+
+                user_analysis_plan = {}
+
+                # 표 형식으로 보여주기 위해 columns로 구성
+                st.markdown("아래 표에서 각 질문별로 통계 분석 실행 여부와 분석 타입을 설정하세요.")
+                st.write("")  # spacing
+
+                # 테이블 구성
+                plan_table_data = []
+                for key in question_keys:
+                    plan_table_data.append({
+                        "질문 Key": key,
+                        "질문 내용": question_texts.get(key, ""),
+                        "통계 분석 실행 유무": True,  # 기본값은 포함
+                        "통계 분석 방식": "추천 (자동)"
+                    })
+
+                import pandas as pd
+                plan_df = pd.DataFrame(plan_table_data)
+
+                # Immediately after creating plan_df, update "통계 분석 방식" using LLM recommendation
+                for idx, row in plan_df.iterrows():
+                    key = row["질문 Key"]
+                    selected_table = tables.get(key)
+                    selected_key = normalize_key(key)
+
+                    llm_state = {
+                        "analysis_type": False,
+                        "selected_key": selected_key,
+                        "selected_table": selected_table,
+                        "lang": lang,
+                        "user_analysis_plan": user_analysis_plan
+                    }
+
+                    try:
+                        from table_analysis_decision_test_type import streamlit_test_type_decision_fn
+                        llm_result = streamlit_test_type_decision_fn(llm_state)
+                        inferred_test_type = llm_result.get("test_type", None)
+
+                        if inferred_test_type == "ft_test":
+                            plan_df.at[idx, "통계 분석 방식"] = "추천 (F/T Test)"
+                        elif inferred_test_type == "chi_square":
+                            plan_df.at[idx, "통계 분석 방식"] = "추천 (Chi-Square)"
+                    except Exception as e:
+                        logger.error(f"통계 검정 추천 오류 (key: {key}): {traceback.format_exc()}")
+
+                edited_df = st.data_editor(
+                    plan_df,
+                    column_config={
+                        "통계 분석 실행 유무": st.column_config.CheckboxColumn("통계 분석 실행 유무"),
+                        "통계 분석 방식": st.column_config.SelectboxColumn("통계 분석 방식", options=["자동", "F/T Test", "Chi-Square"]),
+                    },
+                    use_container_width=True,
+                    num_rows="dynamic",
+                    key="plan_editor"   
+                )
+
+                # Save session state
+                user_analysis_plan = {
+                    row["질문 Key"]: {
+                        "do_analyze": row["통계 분석 실행 유무"],
+                        "analysis_type": row["통계 분석 방식"]
+                    }
+                    for _, row in edited_df.iterrows()
+                }
+                st.session_state["user_analysis_plan"] = user_analysis_plan
+
             run = st.button(TEXT["run_page"]["run_button"][lang], use_container_width=True)
 
             if run:
@@ -290,15 +361,59 @@ def main():
                 elif not analysis_type_flag:
                     all_results = {}
                     for key in question_keys:
-                        logger.info(f"Running batch analysis for question key: {key}")
+                        plan = st.session_state.get("user_analysis_plan", {}).get(key, {})
+                        if not plan.get("do_analyze", True):
+                            continue  # skip if not selected
+
+                        analysis_type_value = plan.get("analysis_type", "자동")
+                        override_type = None
+                        if analysis_type_value == "F/T Test":
+                            override_type = "ft_test"
+                        elif analysis_type_value == "Chi-Square":
+                            override_type = "chi_square"
+
                         init_state_loop = {
-                            # Used to suppress logging and UI for batch mode
-                            "analysis_type": False,  # Used to suppress logging and UI for batch mode
+                            "analysis_type": False,
                             "selected_key": key.strip(),
                             "uploaded_file": io.BytesIO(uploaded_file_content),
                             "raw_data_file": io.BytesIO(raw_data_content),
                             "lang": lang
                         }
+
+                        # If override_type is None, determine LLM-based test type and inject to init_state_loop
+                        if override_type is None:
+                            # 자동 결정 시 LLM 기반 통계 검정 방법 추천
+                            selected_table = tables.get(key)
+                            selected_key = normalize_key(key)
+
+                            # test_type 추론을 위한 state 구성
+                            llm_state = {
+                                "analysis_type": False,
+                                "selected_key": selected_key,
+                                "selected_table": selected_table,
+                                "lang": lang,
+                                "user_analysis_plan": user_analysis_plan
+                            }
+
+                            # LLM 기반 test_type 결정 함수 호출
+                            try:
+                                from table_analysis_decision_test_type import streamlit_test_type_decision_fn
+                                
+                                llm_result = streamlit_test_type_decision_fn(llm_state)
+                                inferred_test_type = llm_result.get("test_type", None)
+                                if inferred_test_type in ["ft_test", "chi_square"]:
+                                    init_state_loop["test_type_override"] = inferred_test_type
+                                    # Update user_analysis_plan to show display-friendly type
+                                    test_type_label = "F/T Test" if inferred_test_type == "ft_test" else "Chi-Square"
+                                    user_analysis_plan[key]["analysis_type"] = f"추천 ({test_type_label})"
+                                    st.session_state["user_analysis_plan"] = user_analysis_plan
+                            except Exception as e:
+                                logger.error(f"LLM test type decision error for key {key}: {traceback.format_exc()}")
+                                # continue without test_type_override if error
+
+                        else:
+                            init_state_loop["test_type_override"] = override_type
+
                         try:
                             result = workflow.invoke(init_state_loop)
                             if "polishing_result" in result:

@@ -153,8 +153,13 @@ def ft_star_analysis_node_fn(state: dict) -> dict:
     try:
 
         raw_data_file = state["raw_data_file"]
-        question_key = state["selected_key"].replace("-", "_").strip()
+        normalized_key = state["selected_key"].replace("-", "_").strip()
         test_type = state["test_type"]
+        if "user_analysis_plan" in state:
+            plan = state["user_analysis_plan"]
+            if normalized_key in plan and "test_type" in plan[normalized_key]:
+                test_type = plan[normalized_key]["test_type"]
+        question_key = normalized_key
         lang = state.get("lang", "한국어")
 
         st.info(f"✅ [FT-Test Agent] {test_type} 분석을 시작합니다..." if lang == "한국어" else f"✅ [FT-Test Agent] Starting {test_type} analysis...")

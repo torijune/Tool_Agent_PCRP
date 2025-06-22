@@ -37,6 +37,8 @@ TABLE_ANALYSIS_PROMPT = {
 
 ---
 
+⚠️ 참고: 만약 통계 분석 결과가 존재하지 않거나 사용자가 분석을 진행하지 않기로 선택한 경우, 주요 항목(anchor)을 중심으로 경향을 파악하고 이를 기반으로 요약할 것.
+
 Let's think step by step.
 
 🎯 분석 및 요약 지침:
@@ -76,6 +78,8 @@ You must integrate the following two pieces of information to identify key patte
 {ft_test_summary}
 
 ---
+
+⚠️ Note: If there are no statistical results or if the user has opted out of statistical analysis, summarize based on key variables (anchor) and observed trends around them.
 
 Let's think step by step.
 

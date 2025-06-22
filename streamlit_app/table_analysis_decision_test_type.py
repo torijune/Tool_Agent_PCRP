@@ -11,7 +11,7 @@ load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
 
 # ✅ LLM 설정
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.5)
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.0)
 
 
 TEST_TYPE_PROMPT = """
@@ -67,6 +67,16 @@ def streamlit_test_type_decision_fn(state):
 
     IGNORE_COLUMNS = {"대분류", "소분류", "사례수", "row_name"}
     filtered_columns = [col for col in selected_table.columns if col not in IGNORE_COLUMNS]
+
+    question_key = state.get("selected_key", "")
+    user_analysis_plan = state.get("user_analysis_plan", {})
+    user_decision = user_analysis_plan.get(question_key, {})
+
+    if isinstance(user_decision, dict) and user_decision.get("use_stat") is False:
+        return {**state, "test_type": None}
+
+    if isinstance(user_decision, dict) and user_decision.get("test_type") in ["ft_test", "chi_square"]:
+        return {**state, "test_type": user_decision["test_type"]}
 
     column_names_str = ", ".join(filtered_columns)
 
