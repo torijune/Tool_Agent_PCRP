@@ -1,3 +1,54 @@
+def rule_based_test_type_decision(columns, question_text=""):
+    """
+    컬럼명과 질문 텍스트를 기반으로 임의 분석/ft_test/chi_square를 rule 기반으로 판단
+    """
+    import re
+
+    # 1️⃣ 임의 분석 판단: 복수 응답 또는 순위 응답 패턴 존재 여부
+    multi_response_keywords = [
+        "1+2", "1+2+3", "복수", "다중", "multiple", "rank", "ranking", "우선순위"
+    ]
+    text_to_check = (" ".join(columns) + " " + question_text).lower()
+    if any(keyword.lower() in text_to_check for keyword in multi_response_keywords):
+        return "manual"
+
+    # 2️⃣ ft_test 판단 기준: 전형적인 범주형 표현이 있는 경우
+    categorical_patterns = [
+        # 관심도 관련
+        r"전혀\s*관심", r"관심\s*없(다|는)", r"관심\s*있(다|는)", r"매우\s*관심", r"관심",
+
+        # 만족도 관련
+        r"매우\s*만족", r"만족", r"불만족", r"매우\s*불만족", r"보통",
+
+        # 찬반 관련
+        r"찬성", r"반대", r"매우\s*찬성", r"매우\s*반대", r"대체로\s*찬성", r"대체로\s*반대",
+
+        # 중요도 관련
+        r"매우\s*중요", r"중요", r"그다지\s*중요하지\s*않", r"전혀\s*중요하지\s*않",
+
+        # 심각성 인식
+        r"매우\s*심각", r"심각", r"심각하지\s*않", r"전혀\s*심각하지\s*않",
+
+        # 빈도 관련
+        r"자주", r"가끔", r"거의\s*없", r"전혀\s*없",
+
+        # 안전성 관련
+        r"안전", r"매우\s*안전", r"위험", r"매우\s*위험",
+
+        # 인지/경험 여부
+        r"들어본\s*적", r"사용한\s*적", r"경험했", r"인지",
+
+        # 태도/의향 관련
+        r"의향", r"생각", r"예정", r"계획", r"할\s*것",
+
+        # 정도 표현
+        r"매우", r"약간", r"보통", r"그다지", r"전혀"
+    ]
+    if any(any(re.search(pattern, col) for pattern in categorical_patterns) for col in columns):
+        return "ft_test"
+
+    # 3️⃣ 나머지는 chi_square
+    return "chi_square"
 import os
 import openai
 import streamlit as st
@@ -67,6 +118,12 @@ def streamlit_test_type_decision_fn(state):
 
     IGNORE_COLUMNS = {"대분류", "소분류", "사례수", "row_name"}
     filtered_columns = [col for col in selected_table.columns if col not in IGNORE_COLUMNS]
+
+    question_text = state.get("selected_question", "")
+    manual_check = rule_based_test_type_decision(filtered_columns, question_text)
+    if manual_check == "manual":
+        return {**state, "test_type": "manual"}
+
 
     question_key = state.get("selected_key", "")
     user_analysis_plan = state.get("user_analysis_plan", {})

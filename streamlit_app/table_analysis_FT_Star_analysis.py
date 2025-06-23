@@ -1,4 +1,5 @@
 from langchain_core.runnables import RunnableLambda
+import numpy as np
 import pandas as pd
 import scipy.stats as stats
 import io
@@ -101,6 +102,7 @@ def run_statistical_tests(test_type, df, question_key, demo_dict):
         result_df = pd.DataFrame(rows)
         return result_df
     
+    # Chi-square 실행 함수
     def run_chi_square_test_df(df: pd.DataFrame, question_key: str, demo_dict: dict) -> pd.DataFrame:
         question_key = question_key.replace("-", "_").strip()
         if question_key not in [col.replace("-", "_").strip() for col in df.columns]:
@@ -138,10 +140,55 @@ def run_statistical_tests(test_type, df, question_key, demo_dict):
 
         return pd.DataFrame(rows)
     
+    # ✅ 임의(수기) 분석 함수
+    def run_manual_analysis(df: pd.DataFrame, question_key: str, demo_dict: dict) -> pd.DataFrame:
+        question_key = question_key.replace("-", "_").strip()
+        if question_key not in df.columns:
+            st.error(f"❌ 질문 항목 '{question_key}' 이(가) 데이터에 존재하지 않습니다.")
+            return pd.DataFrame([])
+
+        try:
+            # 전체 값 및 신뢰구간 계산
+            overall_row = df[df["대분류"].astype(str).str.strip() == "전 체"]
+            if overall_row.empty:
+                st.error("❌ '전 체' 대분류 행이 존재하지 않습니다.")
+                return pd.DataFrame([])
+
+            overall_value = overall_row[question_key].values[0]
+            overall_n = overall_row["사례수"].values[0]
+            overall_std = df[question_key].std()
+            std_error = overall_std / np.sqrt(overall_n)
+            z_score = 1.96
+            ci_lower = overall_value - z_score * std_error
+            ci_upper = overall_value + z_score * std_error
+
+            rows = []
+            for idx, row in df.iterrows():
+                if row["대분류"] == "전 체":
+                    continue
+                group_value = row[question_key]
+                group_label = f"{row['대분류']} - {row['소분류']}" if pd.notna(row['소분류']) else row['대분류']
+                significant = group_value < ci_lower or group_value > ci_upper
+                rows.append({
+                    "대분류": group_label,
+                    "평균값": group_value,
+                    "유의미 여부": "유의미함" if significant else "무의미함",
+                    "기준 평균": overall_value,
+                    "신뢰구간": f"{round(ci_lower,1)} ~ {round(ci_upper,1)}",
+                    "유의성": "*" if significant else ""
+                })
+
+            return pd.DataFrame(rows)
+        except Exception as e:
+            st.error(f"❌ 임의 분석 중 오류 발생: {e}")
+            return pd.DataFrame([])
+    
     if test_type == "ft_test":
         return run_ft_test_df(df, question_key, demo_dict)
     elif test_type =="chi_square":
         return run_chi_square_test_df(df, question_key, demo_dict)
+    elif test_type == "manual":
+        return run_manual_analysis(df, question_key, demo_dict)
     else:
         raise ValueError(f"❌ 잘못된 test_type: {test_type}")
 

@@ -220,72 +220,118 @@ def main():
             # Per-question analysis plan UI for batch mode
             if not analysis_type_flag and tables is not None:
                 st.subheader("📌 질문별 분석 방식 설정")
+                st.markdown("아래 표에서 각 질문별로 통계 분석 실행 여부와 분석 타입을 설정하세요.")
+                st.info("💡 '집단간 차이 분석 실행 여부'를 체크하면 해당 질문에 대한 추천 분석 방식이 자동으로 표시됩니다.")
 
                 user_analysis_plan = {}
 
-                # 표 형식으로 보여주기 위해 columns로 구성
-                st.markdown("아래 표에서 각 질문별로 통계 분석 실행 여부와 분석 타입을 설정하세요.")
-                st.write("")  # spacing
+                # 초기 데이터 준비 (추천 분석 방식 미리 계산)
+                recommendations = {}
+                for key in question_keys:
+                    try:
+                        selected_table = tables.get(key)
+                        from table_analysis_decision_test_type import rule_based_test_type_decision
+                        llm_result = rule_based_test_type_decision(selected_table.columns, question_texts.get(key, ""))
+                        
+                        if llm_result == "ft_test":
+                            recommendations[key] = "추천 (F/T Test)"
+                        elif llm_result == "chi_square":
+                            recommendations[key] = "추천 (Chi-Square)"
+                        else:
+                            recommendations[key] = "추천 (임의 분석)"
+                    except Exception as e:
+                        logger.error(f"통계 검정 추천 오류 (key: {key}): {traceback.format_exc()}")
+                        recommendations[key] = "추천 (임의 분석)"
 
-                # 테이블 구성
+                # 초기 세션 상태 설정 (한 번만)
+                if "analysis_plan_state" not in st.session_state:
+                    st.session_state["analysis_plan_state"] = {
+                        key: {
+                            "do_analyze": True,
+                            "analysis_type": recommendations[key]
+                        } for key in question_keys
+                    }
+
+                # 현재 상태 기반으로 테이블 데이터 구성
                 plan_table_data = []
                 for key in question_keys:
+                    current_state = st.session_state["analysis_plan_state"][key]
+                    
+                    # 체크가 안 되어 있으면 분석 방식은 빈 문자열로 설정
+                    analysis_type_display = current_state["analysis_type"] if current_state["do_analyze"] else ""
+                    
                     plan_table_data.append({
                         "질문 Key": key,
                         "질문 내용": question_texts.get(key, ""),
-                        "통계 분석 실행 유무": True,  # 기본값은 포함
-                        "통계 분석 방식": "추천 (자동)"
+                        "집단간 차이 분석 실행 여부": current_state["do_analyze"],
+                        "통계 분석 방식": analysis_type_display
                     })
 
                 import pandas as pd
                 plan_df = pd.DataFrame(plan_table_data)
 
-                # Immediately after creating plan_df, update "통계 분석 방식" using LLM recommendation
-                for idx, row in plan_df.iterrows():
-                    key = row["질문 Key"]
-                    selected_table = tables.get(key)
-                    selected_key = normalize_key(key)
-
-                    llm_state = {
-                        "analysis_type": False,
-                        "selected_key": selected_key,
-                        "selected_table": selected_table,
-                        "lang": lang,
-                        "user_analysis_plan": user_analysis_plan
-                    }
-
-                    try:
-                        from table_analysis_decision_test_type import streamlit_test_type_decision_fn
-                        llm_result = streamlit_test_type_decision_fn(llm_state)
-                        inferred_test_type = llm_result.get("test_type", None)
-
-                        if inferred_test_type == "ft_test":
-                            plan_df.at[idx, "통계 분석 방식"] = "추천 (F/T Test)"
-                        elif inferred_test_type == "chi_square":
-                            plan_df.at[idx, "통계 분석 방식"] = "추천 (Chi-Square)"
-                    except Exception as e:
-                        logger.error(f"통계 검정 추천 오류 (key: {key}): {traceback.format_exc()}")
-
+                # 데이터 에디터
                 edited_df = st.data_editor(
                     plan_df,
                     column_config={
-                        "통계 분석 실행 유무": st.column_config.CheckboxColumn("통계 분석 실행 유무"),
-                        "통계 분석 방식": st.column_config.SelectboxColumn("통계 분석 방식", options=["자동", "F/T Test", "Chi-Square"]),
+                        "질문 Key": st.column_config.TextColumn("질문 Key", width="small", disabled=True),
+                        "질문 내용": st.column_config.TextColumn("질문 내용", width="large", disabled=True),
+                        "집단간 차이 분석 실행 여부": st.column_config.CheckboxColumn("집단간 차이 분석 실행 여부", width="medium"),
+                        "통계 분석 방식": st.column_config.SelectboxColumn(
+                            "통계 분석 방식", 
+                            options=["", "F/T Test", "Chi-Square", "임의 분석", "추천 (F/T Test)", "추천 (Chi-Square)", "추천 (임의 분석)"],
+                            required=False,
+                            width="medium"
+                        )
                     },
                     use_container_width=True,
-                    num_rows="dynamic",
+                    hide_index=True,
                     key="plan_editor"   
                 )
 
-                # Save session state
+                # 상태 업데이트 및 조건부 분석 방식 설정
+                updated_state = {}
+                for idx, row in edited_df.iterrows():
+                    key = row["질문 Key"]
+                    do_analyze = row["집단간 차이 분석 실행 여부"]
+                    analysis_type = row["통계 분석 방식"]
+                    
+                    if do_analyze:
+                        # 체크가 되어 있는데 분석 방식이 비어있으면 추천값으로 자동 설정
+                        if not analysis_type or analysis_type == "":
+                            analysis_type = recommendations[key]
+                        updated_state[key] = {
+                            "do_analyze": True,
+                            "analysis_type": analysis_type
+                        }
+                    else:
+                        # 체크가 해제되면 분석 방식도 빈 문자열로 초기화
+                        updated_state[key] = {
+                            "do_analyze": False,
+                            "analysis_type": ""
+                        }
+
+                # 세션 상태 업데이트
+                st.session_state["analysis_plan_state"] = updated_state
+
+                # 최종 사용자 분석 계획 구성
                 user_analysis_plan = {
-                    row["질문 Key"]: {
-                        "do_analyze": row["통계 분석 실행 유무"],
-                        "analysis_type": row["통계 분석 방식"]
+                    key: {
+                        "do_analyze": state["do_analyze"],
+                        "analysis_type": state["analysis_type"]
                     }
-                    for _, row in edited_df.iterrows()
+                    for key, state in updated_state.items()
                 }
+
+                # 세션 상태에 저장
                 st.session_state["user_analysis_plan"] = user_analysis_plan
+
+                # 요약 정보 표시
+                selected_count = sum(1 for state in updated_state.values() if state["do_analyze"])
+                if selected_count > 0:
+                    st.success(f"✅ 총 {selected_count}개 질문이 분석 대상으로 선택되었습니다.")
+                else:
+                    st.warning("⚠️ 분석할 질문이 선택되지 않았습니다.")
 
             run = st.button(TEXT["run_page"]["run_button"][lang], use_container_width=True)
 
